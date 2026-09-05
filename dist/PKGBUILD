@@ -1,7 +1,7 @@
 # Maintainer: Guedes Software <guedessoftware@users.noreply.github.com>
 pkgname=purrfind
 pkgver=0.5.0rc2
-pkgrel=24
+pkgrel=25
 pkgdesc='Fast, native file and content search for Linux'
 arch=('x86_64')
 url='https://github.com/guedessoftware/PurrFind'
@@ -10,7 +10,7 @@ depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'libx11' 'sqlite' 'popple
 optdepends=('tesseract-data-eng: English OCR' 'tesseract-data-por: Portuguese OCR')
 makedepends=('cmake' 'ninja')
 source=("PurrFind-0.5.0-rc2-source.tar.xz")
-sha256sums=('343dfcdc9cb46b10d7733af2154ace2d017ed8a4fb4de8d484e50e16d2afd4fd')
+sha256sums=('a8736ae97e7080fcf568a3b3863db8e44ee25fd3a973bed80015c8a5bc771afe')
 build() { cmake -S "PurrFind-0.5.0-rc2" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr; cmake --build build; }
 check() { QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure; }
 package() { DESTDIR="$pkgdir" cmake --install build; }
