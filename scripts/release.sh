@@ -6,6 +6,7 @@ mkdir -p dist
 archive="dist/PurrFind-${version}-source.tar.xz"
 tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-0}" --owner=0 --group=0 --numeric-owner \
   --exclude='./build' --exclude='./build-*' --exclude='./dist' --exclude='./dist/**' \
+  --exclude='./dist-*' --exclude='./dist-*/**' \
   --exclude='./CMakeFiles' --exclude='./CMakeFiles/**' --exclude='./CMakeCache.txt' \
   --exclude='./cmake_install.cmake' --exclude='./CTestTestfile.cmake' --exclude='./Makefile' \
   --exclude='./_CPack_Packages' --exclude='./_CPack_Packages/**' --exclude='./.git' \
