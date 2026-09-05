@@ -10,7 +10,7 @@ depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'libx11' 'sqlite' 'popple
 optdepends=('tesseract-data-eng: English OCR' 'tesseract-data-por: Portuguese OCR')
 makedepends=('cmake' 'ninja')
 source=("PurrFind-0.5.0-rc2-source.tar.xz")
-sha256sums=('5d29f0fd57e507fc0de7991d6a8cde0ea4e119dca16b5031bb2b75dbbb38d886')
+sha256sums=('0567e77eb8eb5677d0d9093239de2e15f25828e26e66850aaa448c7593fd4596')
 build() { cmake -S "PurrFind-0.5.0-rc2" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr; cmake --build build; }
 check() { QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure; }
 package() { DESTDIR="$pkgdir" cmake --install build; }
