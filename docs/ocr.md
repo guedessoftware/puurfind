@@ -18,7 +18,7 @@ retain good native text and OCR only scanned pages. Originals are never modified
 and no replacement PDF is created.
 
 JPEG, PNG, TIFF, and WebP images are supported when their Qt decoder is present.
-PDF OCR defaults on; image OCR defaults off. `source:ocr` (also `match:ocr`)
+PDF and image OCR default on. `source:ocr` (also `match:ocr`)
 restricts a query to recognized text. Results carry an OCR badge, highlighted
 snippet, confidence-adjusted score, and PDF page number for the existing preview.
 

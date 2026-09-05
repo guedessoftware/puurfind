@@ -64,7 +64,7 @@
 
 ### Added
 
-- Entirely local Tesseract OCR for scanned/hybrid PDFs and opt-in JPEG, PNG, TIFF, and WebP images.
+- Entirely local Tesseract OCR for scanned/hybrid PDFs and JPEG, PNG, TIFF, and WebP images (enabled by default; can be disabled in Settings).
 - Isolated per-document OCR worker, persistent page-level queue, watchdog, bounded retries, battery/load-aware scheduling, and language-pack discovery.
 - Schema-v4 OCR pages/FTS, progressive results, confidence-aware ranking, `source:ocr`, page-aware previews, status controls, tests, and benchmarks.
 

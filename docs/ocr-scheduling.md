@@ -8,7 +8,7 @@ errors survive logout, restart, or worker failure.
 Default policy:
 
 - scanned/hybrid PDF OCR enabled;
-- image OCR disabled;
+- image OCR enabled;
 - one worker process and one OpenMP thread;
 - process nice level 19 and Linux idle I/O class;
 - 200 DPI, at most 100 pages and 500 MiB per PDF;

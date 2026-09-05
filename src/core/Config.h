@@ -23,7 +23,9 @@ struct ConfigData {
     bool advancedImageMetadata{true};
     bool usageRankingEnabled{true};
     bool ocrPdfEnabled{true};
-    bool ocrImagesEnabled{false};
+    // Enable image OCR by default so a fresh installation is fully indexed.
+    // An explicit user choice to disable it is still persisted in config.json.
+    bool ocrImagesEnabled{true};
     bool ocrPaused{false};
     QStringList ocrLanguages{"por", "eng"};
     QString ocrResourceProfile{"low"};
