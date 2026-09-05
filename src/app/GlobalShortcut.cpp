@@ -248,7 +248,10 @@ bool GlobalShortcut::registerGnomeShortcut(const QString &shortcut)
     for (const auto &entry : paths) quotedPaths.append("'" + entry + "'");
     if (!runGsettings({"set", schema, key, "[" + quotedPaths.join(", ") + "]"})) return false;
 
-    const QString keySchema = QString::fromLatin1(schema) + ":" + QString::fromLatin1(path);
+    // The list lives in the non-relocatable media-keys schema, while each
+    // custom entry is exposed through GNOME's relocatable child schema.
+    const QString keySchema = QString::fromLatin1(schema)
+        + ".custom-keybinding:" + QString::fromLatin1(path);
     const QString command = QCoreApplication::applicationFilePath();
     if (!runGsettings({"set", keySchema, "name", "'PurrFind'"})
         || !runGsettings({"set", keySchema, "command", "'" + command + "'"})
