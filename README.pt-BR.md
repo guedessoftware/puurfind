@@ -110,8 +110,10 @@ systemctl --user enable --now purrfind-indexer.service
 ```
 
 O listener da bandeja/atalho é registrado pelo autostart XDG e inicia no
-próximo login gráfico. Para ativá-lo imediatamente após a instalação, execute
-`/usr/bin/purrfind --background` uma vez; ele permanecerá ativo na bandeja.
+próximo login gráfico. Para ativá-lo imediatamente após a instalação, inicie-o
+em segundo plano na sua sessão de usuário:
+`nohup /usr/bin/purrfind --background >/tmp/purrfind.log 2>&1 & disown`.
+O processo permanece na bandeja para manter o atalho global ativo.
 
 ## Atalhos e bandeja
 
