@@ -63,7 +63,16 @@ combination, PurrFind reports the conflict instead of silently replacing it.
 
 Settings lists only installed Tesseract `.traineddata` files. Install the
 distribution package for `eng`, `por`, or the desired language, then restart
-the indexer. PurrFind never downloads language data.
+the indexer. On Ubuntu/Debian, the default Portuguese setup is:
+
+```sh
+sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-por
+systemctl --user restart purrfind-indexer.service
+```
+
+The DEB package recommends the English and Portuguese packs automatically;
+the explicit command is useful after installing with `--no-install-recommends`.
+PurrFind never downloads language data.
 
 ## Remove local data
 

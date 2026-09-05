@@ -7,6 +7,9 @@
 #include <QDBusMetaType>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QCoreApplication>
+#include <QProcess>
+#include <QRegularExpression>
 #include <QRandomGenerator>
 #include <QSocketNotifier>
 #include <QTimer>
@@ -82,10 +85,9 @@ GlobalShortcut::~GlobalShortcut()
 bool GlobalShortcut::registerX11Shortcut(const QString &shortcut)
 {
 #ifdef PURRFIND_WITH_X11_SHORTCUT
-    // Prefer the native X11 grab whenever an X display is available.  Some
-    // desktop sessions expose XWayland while reporting XDG_SESSION_TYPE=wayland;
-    // rejecting those sessions makes Super+F silently fall back to portals that
-    // are not implemented by every KDE/GNOME portal version.
+    // Use the native X11 grab only for an X11 session.  XWayland may expose a
+    // DISPLAY while the compositor still owns Super-key events, so Wayland
+    // sessions are routed through their compositor integration below.
     if (qEnvironmentVariable("DISPLAY").isEmpty())
         return false;
 
@@ -157,6 +159,88 @@ bool GlobalShortcut::registerX11Shortcut(const QString &shortcut)
 #endif
 }
 
+namespace {
+
+bool isWaylandSession()
+{
+    return qEnvironmentVariable("XDG_SESSION_TYPE").compare("wayland", Qt::CaseInsensitive) == 0
+        || !qEnvironmentVariable("WAYLAND_DISPLAY").isEmpty();
+}
+
+bool isGnomeSession()
+{
+    const auto desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toLower();
+    return desktop.contains("gnome") || desktop.contains("ubuntu");
+}
+
+QString gnomeTrigger(const QString &shortcut)
+{
+    const auto parts = shortcut.split('+', Qt::SkipEmptyParts);
+    if (parts.isEmpty()) return {};
+    QString trigger;
+    for (int i = 0; i + 1 < parts.size(); ++i) {
+        const auto modifier = parts.at(i).trimmed();
+        if (modifier.compare("Super", Qt::CaseInsensitive) == 0
+            || modifier.compare("Meta", Qt::CaseInsensitive) == 0
+            || modifier.compare("Logo", Qt::CaseInsensitive) == 0)
+            trigger += "<Super>";
+        else if (modifier.compare("Ctrl", Qt::CaseInsensitive) == 0
+                 || modifier.compare("Control", Qt::CaseInsensitive) == 0)
+            trigger += "<Control>";
+        else if (modifier.compare("Alt", Qt::CaseInsensitive) == 0)
+            trigger += "<Alt>";
+        else if (modifier.compare("Shift", Qt::CaseInsensitive) == 0)
+            trigger += "<Shift>";
+        else
+            return {};
+    }
+    trigger += parts.constLast().trimmed().toLower();
+    return trigger;
+}
+
+bool runGsettings(const QStringList &arguments, QByteArray *standardOutput = nullptr)
+{
+    QProcess process;
+    process.start("gsettings", arguments);
+    if (!process.waitForStarted(1500) || !process.waitForFinished(3000)
+        || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
+        return false;
+    if (standardOutput) *standardOutput = process.readAllStandardOutput();
+    return true;
+}
+
+} // namespace
+
+bool GlobalShortcut::registerGnomeShortcut(const QString &shortcut)
+{
+    const QString trigger = gnomeTrigger(shortcut);
+    if (trigger.isEmpty()) return false;
+
+    constexpr auto schema = "org.gnome.settings-daemon.plugins.media-keys";
+    constexpr auto key = "custom-keybindings";
+    constexpr auto path = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/purrfind/";
+    QByteArray configured;
+    if (!runGsettings({"get", schema, key}, &configured)) return false;
+
+    QStringList paths;
+    const QRegularExpression quoted(R"('([^']+)')");
+    auto match = quoted.globalMatch(QString::fromUtf8(configured));
+    while (match.hasNext()) paths.append(match.next().captured(1));
+    if (!paths.contains(QString::fromLatin1(path))) paths.append(QString::fromLatin1(path));
+    QStringList quotedPaths;
+    for (const auto &entry : paths) quotedPaths.append("'" + entry + "'");
+    if (!runGsettings({"set", schema, key, "[" + quotedPaths.join(", ") + "]"})) return false;
+
+    const QString keySchema = QString::fromLatin1(schema) + ":" + QString::fromLatin1(path);
+    const QString command = QCoreApplication::applicationFilePath();
+    if (!runGsettings({"set", keySchema, "name", "'PurrFind'"})
+        || !runGsettings({"set", keySchema, "command", "'" + command + "'"})
+        || !runGsettings({"set", keySchema, "binding", "'" + trigger + "'"}))
+        return false;
+    QTimer::singleShot(0, this, [this] { emit registrationChanged(true, {}); });
+    return true;
+}
+
 void GlobalShortcut::releaseX11Shortcut()
 {
 #ifdef PURRFIND_WITH_X11_SHORTCUT
@@ -197,8 +281,20 @@ QString GlobalShortcut::portalTrigger(const QString &shortcut) const
     QString trigger;
     for (int i = 0; i + 1 < parts.size(); ++i) {
         QString modifier = parts.at(i).trimmed();
-        if (modifier.compare("Super", Qt::CaseInsensitive) == 0) modifier = "Meta";
-        trigger += '<' + modifier + '>';
+        if (modifier.compare("Super", Qt::CaseInsensitive) == 0
+            || modifier.compare("Meta", Qt::CaseInsensitive) == 0
+            || modifier.compare("Logo", Qt::CaseInsensitive) == 0)
+            modifier = "LOGO";
+        else if (modifier.compare("Ctrl", Qt::CaseInsensitive) == 0
+                 || modifier.compare("Control", Qt::CaseInsensitive) == 0)
+            modifier = "CTRL";
+        else if (modifier.compare("Alt", Qt::CaseInsensitive) == 0)
+            modifier = "ALT";
+        else if (modifier.compare("Shift", Qt::CaseInsensitive) == 0)
+            modifier = "SHIFT";
+        else
+            return {};
+        trigger += modifier + '+';
     }
     if (!parts.isEmpty()) trigger += parts.last().trimmed().toLower();
     return trigger;
@@ -224,7 +320,12 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
     requestedShortcut_ = shortcut;
     error_.clear();
     releaseX11Shortcut();
-    if (registerX11Shortcut(shortcut)) return;
+    // XWayland can report a successful X11 grab while the compositor keeps
+    // Super-key events. Prefer the compositor-aware path on Wayland.
+    if (!isWaylandSession() && registerX11Shortcut(shortcut)) return;
+    // GNOME 46 (Ubuntu 24.04) does not expose the GlobalShortcuts portal.
+    // Its user custom-keybindings API is the supported native fallback.
+    if (isWaylandSession() && isGnomeSession() && registerGnomeShortcut(shortcut)) return;
     const QString token = QString("purrfind_%1").arg(QRandomGenerator::global()->generate());
     QVariantMap options{{"handle_token", token}, {"session_handle_token", token + "_session"}};
     const QDBusObjectPath expectedRequest = requestPath(token);

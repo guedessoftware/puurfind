@@ -38,6 +38,7 @@ private slots:
 
 private:
     bool registerX11Shortcut(const QString &shortcut);
+    bool registerGnomeShortcut(const QString &shortcut);
     void releaseX11Shortcut();
     void processX11Events();
     void connectRequest(const QDBusObjectPath &request, const char *slot);
