@@ -1595,14 +1595,20 @@ bool Database::applyOcrPolicy(bool pdfEnabled, bool imagesEnabled, QString *erro
 {
     if (!begin(error)) return false;
     const QString images = "type LIKE 'image/%' AND extension IN ('jpg','jpeg','png','tif','tiff','webp')";
+    // Unsupported is also used when a language pack was temporarily absent.
+    // Requeue only that specific reason when OCR becomes available again;
+    // genuine unsupported/encrypted files remain untouched.
+    const QString retryMissingLanguage = "(ocr_state<>7 OR ocr_error='OCR language pack not found')";
     QStringList statements;
     if (pdfEnabled)
-        statements << "UPDATE files SET ocr_state=1 WHERE is_dir=0 AND extension='pdf' AND ocr_state IN (0,9) "
+        statements << "UPDATE files SET ocr_state=1,ocr_error='' WHERE is_dir=0 AND extension='pdf' AND ocr_state IN (0,7,9) "
+                      "AND " + retryMissingLanguage + " "
                       "AND content_state<>6 AND (content_state<>3 OR EXISTS(SELECT 1 FROM document_pages p WHERE p.file_id=files.id AND length(trim(p.content))<32))";
     else
         statements << "UPDATE files SET ocr_state=0 WHERE extension='pdf' AND ocr_state IN (1,2,9)";
     if (imagesEnabled)
-        statements << "UPDATE files SET ocr_state=1 WHERE is_dir=0 AND " + images + " AND ocr_state IN (0,9)";
+        statements << "UPDATE files SET ocr_state=1,ocr_error='' WHERE is_dir=0 AND " + images
+                      + " AND ocr_state IN (0,7,9) AND " + retryMissingLanguage;
     else
         statements << "UPDATE files SET ocr_state=0 WHERE " + images + " AND ocr_state IN (1,2,9)";
     if (!execute(statements.join(';').toUtf8().constData(), error) || !commit(error)) { rollback(); return false; }

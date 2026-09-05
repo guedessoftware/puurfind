@@ -165,6 +165,20 @@ int main(int argc, char **argv)
     sqlite3_finalize(ocrMigrationState);
     ocrV5.close();
 
+    const QString ocrPolicyPath = temporary.path() + "/ocr-policy.sqlite3";
+    purrfind::Database ocrPolicy;
+    check(ocrPolicy.open(ocrPolicyPath, false, &error)
+              && ocrPolicy.migrate(&error)
+              && ocrPolicy.upsert(record("/home/test/policy.png", 42, 10), &error)
+              && sqlite3_exec(ocrPolicy.handle(),
+                    "UPDATE files SET ocr_state=7,ocr_error='OCR language pack not found' "
+                    "WHERE path='/home/test/policy.png';", nullptr, nullptr, nullptr) == SQLITE_OK
+              && ocrPolicy.applyOcrPolicy(false, true, &error),
+          "OCR policy requeues images after language packs become available");
+    const auto requeuedOcr = ocrPolicy.pendingOcr(false, true, false, 10, &error);
+    check(requeuedOcr.size() == 1, "OCR policy exposes requeued image");
+    ocrPolicy.close();
+
     purrfind::ConfigData phase3Config = purrfind::Config::defaults();
     phase3Config.previewAutomatically = false;
     phase3Config.advancedImageMetadata = false;
