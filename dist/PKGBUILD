@@ -7,10 +7,10 @@ arch=('x86_64')
 url='https://github.com/guedessoftware/PurrFind'
 license=('GPL-3.0-or-later')
 depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'libx11' 'sqlite' 'poppler-qt6' 'libzip' 'libxml2' 'exiv2' 'tesseract' 'hicolor-icon-theme')
-optdepends=('tesseract-data-eng: English OCR' 'tesseract-data-por: Portuguese OCR')
+optdepends=('tesseract-data-eng: English OCR' 'tesseract-data-osd: Orientation and script detection OCR' 'tesseract-data-por: Portuguese OCR')
 makedepends=('cmake' 'ninja')
 source=("PurrFind-0.5.0-rc2-source.tar.xz")
-sha256sums=('ea0ce70b391a75566fe94766c025bc36d99d17237ffb5a8569bc9da8351ec2fc')
+sha256sums=('c7ef6a79db2d6cc483aa6227c80cf8999d73c4843474bf9bdabd8b79472cb780')
 build() { cmake -S "PurrFind-0.5.0-rc2" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr; cmake --build build; }
 check() { QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure; }
 package() { DESTDIR="$pkgdir" cmake --install build; }
