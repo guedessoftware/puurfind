@@ -1,58 +1,104 @@
-# PurrFind
+<div align="center">
 
-**Fast, native file and content search for Linux.**
+<img src="resources/icons/logo_fundo_escuro.png" alt="PurrFind" width="420">
 
-It keeps a private local index and searches filenames, paths, and document
-contents as you type. Version 0.5.0-rc2 stabilizes the architecture for a first
-public beta: recovery, hardening, cross-distribution CI, native packaging, and
-performance gates build on the entirely local OCR introduced in version 0.4.
-OCR runs strictly in the background
-for scanned PDFs and, when enabled, images—without delaying filename or native
-full-text availability.
+**Fast, private and native file search for Linux**
 
-## Highlights
+[![CI](https://github.com/guedessoftware/puurfind/actions/workflows/ci.yml/badge.svg)](https://github.com/guedessoftware/puurfind/actions/workflows/ci.yml)
+[![Latest beta](https://img.shields.io/github/v/release/guedessoftware/puurfind?include_prereleases&label=beta)](https://github.com/guedessoftware/puurfind/releases)
+[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
-- Instant local search backed by SQLite FTS5 trigram indexes
-- Full-text document search with snippets and phrase/scoped queries
-- Local OCR for scanned and hybrid PDFs, with optional JPEG/PNG/TIFF/WebP OCR
-- Rich selected-item previews for images, PDFs, text, Office/ODF, folders, and
-  local MP4/WebM video playback
-- Local EXIF search, PDF match-page previews, and optional usage-aware ranking
-- Low-resource, event-driven indexing with batched writes
-- Native Qt 6/QML interface for Wayland and X11
-- Resident system-tray status with open/quit actions and a reliable native
-  `Super+F` listener on X11 (portal fallback on Wayland)
-- Local-only operation: no accounts, telemetry, uploads, or network calls
-- Filters for extension, folder, modification date, size, and category
-- Versioned database migrations and distribution-friendly CMake installs
+[Português (Brasil)](README.pt-BR.md)
 
-## Build
+</div>
 
-Required packages are a C++20 compiler, CMake 3.24+, Ninja, Qt 6.4+ (Core,
-DBus, Gui, Multimedia, Qml, Quick, and Quick Controls 2), SQLite 3 with FTS5, Poppler-Qt6,
-libzip, libxml2, Exiv2, Tesseract/Leptonica, installed Tesseract language data,
-and the normal Linux inotify headers. The build never downloads dependencies or
-language packs. Packagers may disable optional format families with
-`-DPURRFIND_WITH_PDF=OFF`, `-DPURRFIND_WITH_OFFICE=OFF`, or
-`-DPURRFIND_WITH_EXIV2=OFF`; use `-DPURRFIND_WITH_OCR=OFF` to build without
-Tesseract. Without Exiv2, Qt image previews and dimensions remain available.
-Language package names vary by distribution (commonly `tesseract-data-eng` and
-`tesseract-data-por`) and are optional runtime resources.
+PurrFind builds a private local index and finds files, folders, metadata and
+document content as you type. It is written in C++20/Qt 6, works on X11 and
+Wayland, and never requires an account, telemetry or a network connection.
+
+## See it in action
+
+The interface has a focused dark theme and a complete light theme. Search
+results are grouped by category and the preview panel opens supported content
+without leaving the application.
+
+<p align="center">
+  <img src="docs/screenshots/search-dark-empty.png" alt="Dark theme, empty search" width="49%">
+  <img src="docs/screenshots/search-light-empty.png" alt="Light theme, empty search" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/search-dark-result.png" alt="Dark theme with a document preview" width="49%">
+  <img src="docs/screenshots/search-light-result.png" alt="Light theme with a document preview" width="49%">
+</p>
+
+## Features
+
+- Instant filename and path search backed by SQLite FTS5 trigram indexes.
+- Full-text search with snippets, phrases, scoped fields and category filters.
+- Persistent, low-priority indexing with inotify updates and crash recovery.
+- Local OCR for scanned and hybrid PDFs; optional OCR for PNG, JPEG, TIFF and WebP.
+- Previews for images, PDFs, text, Markdown, Office/ODF documents, folders and
+  local MP4/WebM video playback.
+- Folder previews show the immediate contents with type-specific icons.
+- EXIF metadata search (camera, dimensions and author) when Exiv2 is available.
+- System tray status, open/quit actions and the global `Super+F` shortcut.
+- Light, dark and system themes, configurable from Settings.
+- Optional usage-aware ranking, resource limits and independent OCR/content
+  indexing controls.
+- Local-only by design: no cloud account, telemetry, upload or background network call.
+
+## Download the beta
+
+The current public beta is **0.5.0-rc2**. Packages and the source archive are
+attached to the [GitHub release](https://github.com/guedessoftware/puurfind/releases/tag/v0.5.0-rc2).
+
+| Platform | Download | Install example |
+| --- | --- | --- |
+| Debian/Ubuntu | [`.deb`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.deb) | `sudo apt install ./purrfind-0.5.0-rc2-x86_64.deb` |
+| Fedora/RHEL | [`.rpm`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.rpm) | `sudo dnf install ./purrfind-0.5.0-rc2-x86_64.rpm` |
+| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst` |
+| Source | [`tar.xz`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-source.tar.xz) | See [Build](#build-from-source) |
+
+Verify downloads with [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
+
+> Flatpak is not included in this beta. PurrFind's persistent user indexer and
+> explicit filesystem roots need a portal/sandbox design that preserves the
+> same functionality without over-broad permissions.
+
+## Search syntax
+
+Search terms match names and indexed content. Fields can be combined:
+
+```text
+contract type:pdf
+content:"neutral network" path:Documents
+camera:Canon width:>3000 type:image
+pages:>20 author:João
+source:ocr FIRENETWORK
+modified:7d size:>10MB
+```
+
+Use `kind:file` and `kind:folder`, or click the category tabs. The default
+roots and excluded folders are editable in Settings; hidden files remain
+searchable unless excluded explicitly.
+
+## Build from source
+
+Requirements: C++20, CMake 3.24+, Ninja, Qt 6.4+ (Core, DBus, Gui,
+Multimedia, Qml, Quick and Quick Controls), SQLite with FTS5, Poppler-Qt6,
+libzip, libxml2, Exiv2, Tesseract/Leptonica and installed Tesseract language
+data. Optional families can be disabled with
+`-DPURRFIND_WITH_PDF=OFF`, `-DPURRFIND_WITH_OFFICE=OFF`,
+`-DPURRFIND_WITH_EXIV2=OFF` or `-DPURRFIND_WITH_OCR=OFF`.
 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
-```
-
-Run from the build tree:
-
-```sh
-./build/purrfind-indexer &
 ./build/purrfind
 ```
 
-Install using the selected prefix and enable the per-user service:
+Install and activate the per-user indexer:
 
 ```sh
 cmake --install build
@@ -60,55 +106,32 @@ systemctl --user daemon-reload
 systemctl --user enable --now purrfind-indexer.service
 ```
 
-For a staged package, use `DESTDIR` normally. Install destinations use
-`GNUInstallDirs`; the system-wide XDG autostart entry is placed below the full
-`CMAKE_INSTALL_SYSCONFDIR` path so `/usr` packages correctly install it in
-`/etc/xdg/autostart`.
+## Keyboard and tray controls
 
-## Packages and release candidates
+`Super+F` opens or focuses PurrFind. Closing the window keeps the indexer and
+tray resident, so the shortcut remains available. The tray menu reports the
+indexing and shortcut state and provides Open and Quit actions. X11 registers
+the shortcut directly; Wayland uses the XDG Global Shortcuts portal when the
+desktop provides it.
 
-CMake/CPack can produce source, DEB, and RPM packages. An Arch recipe lives in
-`packaging/arch`. Run `scripts/release.sh` for a deterministic source archive
-and `SHA256SUMS`; optional signing uses an externally configured GPG key. Native
-packages are currently the supported distribution route. See
-[packaging](docs/packaging.md) for exact status, Flatpak constraints, uninstall,
-purge, and release gates.
+## Documentation
 
-## Search syntax
+- [Architecture](docs/architecture.md) · [Indexing](docs/indexing.md) · [Search](docs/search.md)
+- [Content indexing](docs/content-indexing.md) · [Extractors](docs/extractors.md)
+- [Previews](docs/previews.md) · [Metadata](docs/metadata.md) · [OCR](docs/ocr.md)
+- [Security](docs/security.md) · [Performance](docs/performance.md)
+- [Packaging status](docs/packaging.md) · [Development](docs/development.md)
+- [Phase 5 report and remaining beta gates](docs/phase5-report.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
-Examples: `contract type:pdf`, `content:"neutral network"`, `name:proposal`,
-`path:Documents`, `camera:Canon width:>3000 type:image`, `pages:>20 author:João`,
-`source:ocr FIRENETWORK`, and `backup modified:7d`.
-Use `kind:file`, `kind:folder`, or the category buttons in the UI.
+## Project status
 
-The default roots and exclusions are visible in Settings. By default PurrFind
-indexes `$HOME` and excludes common application-state/tool-cache directories and its
-own XDG data directory; hidden files remain searchable.
-
-See [architecture](docs/architecture.md), [indexing](docs/indexing.md),
-[search](docs/search.md), [content indexing](docs/content-indexing.md),
-[extractors](docs/extractors.md), [database](docs/database.md),
-[security](docs/security.md), [benchmarks](docs/benchmarks.md), and
-[development](docs/development.md). The release-candidate audit and remaining
-validation gates are tracked in the [Fase 5 report](docs/phase5-report.md).
-Recovery help is in
-[troubleshooting](docs/troubleshooting.md). Phase 4 is documented in
-[OCR](docs/ocr.md), [scheduling](docs/ocr-scheduling.md),
-[OCR security](docs/ocr-security.md), and
-[OCR performance](docs/ocr-performance.md). Phase 3 is documented in
-[previews](docs/previews.md), [metadata](docs/metadata.md),
-[ranking](docs/ranking.md), [cache](docs/cache.md), and
-[performance](docs/performance.md).
-
-## Global shortcut
-
-On X11, PurrFind registers `Super+F` directly with the X server. On Wayland it
-uses the standard XDG Desktop Portal Global Shortcuts API, which may show a
-one-time approval dialog or override a conflicting binding. The tray icon
-shows whether the listener is running and whether shortcut registration
-succeeded. Portal support varies by desktop version; see
-[development notes](docs/development.md#global-shortcut) for a safe fallback.
+The release is a public beta candidate, not a final stable release. Automated
+CI is green on Ubuntu, Debian, Fedora and Arch, including sanitizers, feature
+variants and performance gates. Real desktop validation (KDE/GNOME Wayland,
+HiDPI, multiple monitors, suspend/resume, removable volumes and long-term
+dogfooding) remains tracked in the [Phase 5 report](docs/phase5-report.md).
 
 ## License
 
-GPL-3.0-or-later.
+PurrFind is distributed under [GPL-3.0-or-later](LICENSE).
