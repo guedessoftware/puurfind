@@ -7,10 +7,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Ubuntu LTS, image: "ubuntu:24.04", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
-          - { name: Debian stable, image: "debian:12", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
-          - { name: Fedora current, image: "fedora:latest", install: "dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-langpack-por" }
-          - { name: Arch Linux, image: "archlinux:latest", install: "pacman -Syu --noconfirm --needed base-devel cmake ninja qt6-base qt6-declarative qt6-multimedia qt6-tools libx11 sqlite poppler-qt6 libzip libxml2 exiv2 tesseract tesseract-data-eng tesseract-data-por" }
+          - { name: Ubuntu LTS, image: "ubuntu:24.04", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
+          - { name: Debian stable, image: "debian:12", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
+          - { name: Fedora current, image: "fedora:latest", tessdata: "/usr/share/tesseract/tessdata", install: "dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-langpack-por" }
+          - { name: Arch Linux, image: "archlinux:latest", tessdata: "/usr/share/tessdata", install: "pacman -Syu --noconfirm --needed base-devel cmake ninja qt6-base qt6-declarative qt6-multimedia qt6-tools libx11 sqlite poppler-qt6 libzip libxml2 exiv2 tesseract tesseract-data-eng tesseract-data-por" }
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
@@ -18,9 +18,20 @@ jobs:
       - uses: actions/checkout@v4
       - run: ${{ matrix.install }}
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=ON && cmake --build build --parallel 2
-      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software }
-        run: ctest --test-dir build --output-on-failure && qmllint qml/Main.qml qml/SettingsDialog.qml
-      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software }
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software, TESSDATA_PREFIX: "${{ matrix.tessdata }}" }
+        run: |
+          ctest --test-dir build --output-on-failure
+          if command -v qmllint >/dev/null 2>&1; then
+            qmllint qml/Main.qml qml/SettingsDialog.qml
+          elif test -x /usr/lib64/qt6/bin/qmllint; then
+            /usr/lib64/qt6/bin/qmllint qml/Main.qml qml/SettingsDialog.qml
+          elif test -x /usr/lib/qt6/bin/qmllint; then
+            /usr/lib/qt6/bin/qmllint qml/Main.qml qml/SettingsDialog.qml
+          else
+            echo 'qmllint not installed' >&2
+            exit 1
+          fi
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software, TESSDATA_PREFIX: "${{ matrix.tessdata }}" }
         run: dbus-run-session -- timeout 20 ./build/purrfind --screenshot "$PWD/ui-smoke.png" && test -s ui-smoke.png
       - run: ./scripts/validate-install.sh build
 
