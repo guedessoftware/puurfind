@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.purrfind.Indexer
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/purrfind-indexer
+SystemdService=purrfind-indexer.service

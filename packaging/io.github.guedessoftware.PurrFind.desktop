@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=PurrFind
+GenericName=File Search
+Comment=Fast, private file and content search
+Exec=purrfind
+Icon=io.github.guedessoftware.PurrFind
+Terminal=false
+Categories=Utility;FileTools;
+Keywords=search;files;find;content;OCR;
+StartupNotify=true
+DBusActivatable=false

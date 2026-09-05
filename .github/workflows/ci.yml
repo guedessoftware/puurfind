@@ -1,0 +1,57 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  native-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Ubuntu LTS, image: "ubuntu:24.04", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
+          - { name: Debian stable, image: "debian:12", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
+          - { name: Fedora current, image: "fedora:latest", install: "dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-langpack-por" }
+          - { name: Arch Linux, image: "archlinux:latest", install: "pacman -Syu --noconfirm --needed base-devel cmake ninja qt6-base qt6-declarative qt6-multimedia qt6-tools libx11 sqlite poppler-qt6 libzip libxml2 exiv2 tesseract tesseract-data-eng tesseract-data-por" }
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: ${{ matrix.install }}
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=ON && cmake --build build --parallel 2
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software }
+        run: ctest --test-dir build --output-on-failure && qmllint qml/Main.qml qml/SettingsDialog.qml
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software }
+        run: dbus-run-session -- timeout 20 ./build/purrfind --screenshot "$PWD/ui-smoke.png" && test -s ui-smoke.png
+      - run: ./scripts/validate-install.sh build
+
+  feature-matrix:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    strategy:
+      matrix:
+        options: ["-DPURRFIND_WITH_OCR=OFF", "-DPURRFIND_WITH_EXIV2=OFF", "-DPURRFIND_WITH_PDF=OFF -DPURRFIND_WITH_OFFICE=OFF -DPURRFIND_WITH_EXIV2=OFF -DPURRFIND_WITH_OCR=OFF"]
+    steps:
+      - uses: actions/checkout@v4
+      - run: dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-langpack-por
+      - run: cmake -S . -B build -G Ninja -DBUILD_TESTING=ON ${{ matrix.options }} && cmake --build build --parallel 2
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software }
+        run: ctest --test-dir build --output-on-failure
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: dnf install -y clang cmake ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel
+      - run: cmake -S . -B build-san -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DPURRFIND_WITH_PDF=OFF -DPURRFIND_WITH_OFFICE=OFF -DPURRFIND_WITH_EXIV2=OFF -DPURRFIND_WITH_OCR=OFF -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" && cmake --build build-san --parallel 2
+      - env: { QT_QPA_PLATFORM: offscreen, QT_QUICK_BACKEND: software, ASAN_OPTIONS: detect_leaks=1, UBSAN_OPTIONS: print_stacktrace=1 }
+        run: ctest --test-dir build-san --output-on-failure
+
+  performance-gate:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel libX11-devel sqlite-devel
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DPURRFIND_WITH_PDF=OFF -DPURRFIND_WITH_OFFICE=OFF -DPURRFIND_WITH_EXIV2=OFF -DPURRFIND_WITH_OCR=OFF && cmake --build build --target purrfind-benchmark --parallel 2
+      - run: ./scripts/check-performance.sh ./build/purrfind-benchmark

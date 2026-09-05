@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=PurrFind Shortcut Listener
+Comment=Keep PurrFind ready for the global search shortcut
+Exec=purrfind --background
+Icon=io.github.guedessoftware.PurrFind
+Terminal=false
+NoDisplay=true
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel

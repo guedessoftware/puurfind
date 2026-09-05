@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.guedessoftware.PurrFind</id>
+  <name>PurrFind</name>
+  <summary>Fast, private file and content search for Linux</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="io.github.guedessoftware"><name>Guedes Software</name></developer>
+  <url type="homepage">https://github.com/guedessoftware/PurrFind</url>
+  <url type="bugtracker">https://github.com/guedessoftware/PurrFind/issues</url>
+  <url type="vcs-browser">https://github.com/guedessoftware/PurrFind</url>
+  <content_rating type="oars-1.1"/>
+  <description>
+    <p>PurrFind provides instant filename and path search, full-text document search, local OCR, metadata filters, and rich previews from a private SQLite index.</p>
+    <p>Indexing is progressive and entirely local. PurrFind has no account, telemetry, upload, or cloud service.</p>
+  </description>
+  <categories><category>Utility</category><category>FileTools</category></categories>
+  <launchable type="desktop-id">io.github.guedessoftware.PurrFind.desktop</launchable>
+  <provides><binary>purrfind</binary></provides>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/guedessoftware/PurrFind/main/docs/screenshots/purrfind-main.png</image>
+      <caption>PurrFind search overlay ready for an instant local query</caption>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.5.0~rc2" date="2026-09-04"><description><p>Lower resident memory, responsive configuration and watch setup, automatic OCR pipeline refresh, and refined search UI.</p></description></release>
+    <release version="0.5.0~rc1" date="2026-09-04"><description><p>First public beta release candidate with recovery, hardening, CI, and packaging.</p></description></release>
+    <release version="0.4.0" date="2026-09-04"/>
+    <release version="0.3.0" date="2026-09-04"/>
+    <release version="0.2.0" date="2026-09-04"/>
+    <release version="0.1.0" date="2026-09-04"/>
+  </releases>
+</component>
