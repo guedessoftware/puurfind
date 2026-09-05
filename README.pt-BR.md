@@ -109,6 +109,10 @@ systemctl --user daemon-reload
 systemctl --user enable --now purrfind-indexer.service
 ```
 
+O listener da bandeja/atalho é registrado pelo autostart XDG e inicia no
+próximo login gráfico. Para ativá-lo imediatamente após a instalação, execute
+`/usr/bin/purrfind --background` uma vez; ele permanecerá ativo na bandeja.
+
 ## Atalhos e bandeja
 
 `Super+F` abre ou focaliza o PurrFind. Fechar a janela mantém o indexador e a

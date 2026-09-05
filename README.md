@@ -110,6 +110,10 @@ systemctl --user daemon-reload
 systemctl --user enable --now purrfind-indexer.service
 ```
 
+The tray/shortcut listener is registered through XDG autostart and starts at
+the next graphical login. To activate it immediately after installation, run
+`/usr/bin/purrfind --background` once; it will remain resident in the tray.
+
 ## Keyboard and tray controls
 
 `Super+F` opens or focuses PurrFind. Closing the window keeps the indexer and
