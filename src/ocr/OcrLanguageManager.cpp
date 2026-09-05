@@ -20,6 +20,7 @@ QStringList OcrLanguageManager::availableLanguages()
 #ifdef PURRFIND_WITH_OCR
         QStringList directories{
             "/usr/share/tessdata", "/usr/local/share/tessdata",
+            "/usr/share/tesseract/tessdata",
             "/usr/share/tesseract-ocr/5/tessdata", "/usr/share/tesseract-ocr/4.00/tessdata",
         };
         const QString prefix = qEnvironmentVariable("TESSDATA_PREFIX");

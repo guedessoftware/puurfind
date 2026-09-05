@@ -22,6 +22,29 @@ find_package(X11 QUIET)
 find_package(SQLite3 3.34 REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+# FindSQLite3 changed the imported target name across CMake releases and
+# distributions.  Keep the project buildable with the older module shipped by
+# Ubuntu/Debian while preferring the modern target when it exists.
+if(TARGET SQLite3::SQLite3)
+    set(PURRFIND_SQLITE_TARGET SQLite3::SQLite3)
+elseif(TARGET SQLite::SQLite3)
+    set(PURRFIND_SQLITE_TARGET SQLite::SQLite3)
+else()
+    set(_purrfind_sqlite_includes "${SQLite3_INCLUDE_DIRS}")
+    if(NOT _purrfind_sqlite_includes)
+        set(_purrfind_sqlite_includes "${SQLite3_INCLUDE_DIR}")
+    endif()
+    set(_purrfind_sqlite_libraries "${SQLite3_LIBRARIES}")
+    if(NOT _purrfind_sqlite_libraries)
+        set(_purrfind_sqlite_libraries "${SQLite3_LIBRARY}")
+    endif()
+    add_library(purrfind-sqlite INTERFACE IMPORTED)
+    set_target_properties(purrfind-sqlite PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${_purrfind_sqlite_includes}"
+        INTERFACE_LINK_LIBRARIES "${_purrfind_sqlite_libraries}")
+    set(PURRFIND_SQLITE_TARGET purrfind-sqlite)
+endif()
+
 option(PURRFIND_WITH_PDF "Enable PDF content extraction with Poppler-Qt6" ON)
 option(PURRFIND_WITH_OFFICE "Enable OOXML/OpenDocument extraction with libzip/libxml2" ON)
 option(PURRFIND_WITH_EXIV2 "Enable advanced image metadata with Exiv2" ON)
@@ -50,7 +73,7 @@ add_library(purrfind-core STATIC
     src/core/SearchEngine.cpp
 )
 target_include_directories(purrfind-core PUBLIC src)
-target_link_libraries(purrfind-core PUBLIC Qt6::Core SQLite3::SQLite3)
+target_link_libraries(purrfind-core PUBLIC Qt6::Core ${PURRFIND_SQLITE_TARGET})
 target_compile_definitions(purrfind-core PUBLIC
     PURRFIND_VERSION="${PURRFIND_RELEASE_VERSION}"
 )

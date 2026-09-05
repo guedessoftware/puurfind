@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QImage>
+#include <QImageReader>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPainter>
@@ -121,9 +122,15 @@ int main(int argc, char **argv)
     check(!engine.recognize(technical, {"purrfind_missing_language"}, active).error.isEmpty(),
           "missing language pack is reported");
 
+    const auto supportedFormats = QImageReader::supportedImageFormats();
     const QList<QByteArray> formats{"PNG", "JPEG", "TIFF", "WEBP"};
     QString png;
     for (const auto &format : formats) {
+        const QByteArray normalized = format.toLower();
+        if (!supportedFormats.contains(normalized)) {
+            std::cout << "SKIP: " << format.constData() << " OCR fixture; Qt decoder is not installed\n";
+            continue;
+        }
         const QString path = temporary.path() + "/ocr." + QString::fromLatin1(format).toLower();
         check(technical.save(path, format.constData()), QString::fromLatin1(format) + " OCR fixture");
         const auto recognition = engine.recognize(QImage(path), {"eng"}, active);
@@ -131,6 +138,8 @@ int main(int argc, char **argv)
               QString::fromLatin1(format) + " OCR recognition");
         if (format == "PNG") png = path;
     }
+
+    check(!png.isEmpty(), "PNG OCR fixture available");
 
     int exitCode = -1;
     auto events = runWorker(worker, {"--path", png, "--kind", "image", "--languages", "por+eng",
