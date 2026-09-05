@@ -8,10 +8,12 @@
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QRandomGenerator>
 #include <QSocketNotifier>
+#include <QStandardPaths>
 #include <QTimer>
 
 #ifdef PURRFIND_WITH_X11_SHORTCUT
@@ -200,11 +202,22 @@ QString gnomeTrigger(const QString &shortcut)
 
 bool runGsettings(const QStringList &arguments, QByteArray *standardOutput = nullptr)
 {
+    const QString executable = QStandardPaths::findExecutable("gsettings");
+    if (executable.isEmpty()) {
+        qWarning() << "PurrFind: gsettings executable not found";
+        return false;
+    }
     QProcess process;
-    process.start("gsettings", arguments);
+    process.start(executable, arguments);
     if (!process.waitForStarted(1500) || !process.waitForFinished(3000)
         || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
+    {
+        qWarning().noquote() << "PurrFind: gsettings failed:"
+                             << executable << arguments.join(' ')
+                             << process.errorString()
+                             << QString::fromLocal8Bit(process.readAllStandardError()).trimmed();
         return false;
+    }
     if (standardOutput) *standardOutput = process.readAllStandardOutput();
     return true;
 }
