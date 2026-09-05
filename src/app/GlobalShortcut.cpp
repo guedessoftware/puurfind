@@ -328,8 +328,9 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
     // Super-key events. Prefer the compositor-aware path on Wayland.
     if (!isWaylandSession() && registerX11Shortcut(shortcut)) return;
     // GNOME 46 (Ubuntu 24.04) does not expose the GlobalShortcuts portal.
-    // Its user custom-keybindings API is the supported native fallback.
-    if (isWaylandSession() && isGnomeSession() && registerGnomeShortcut(shortcut)) return;
+    // Its user custom-keybindings API is also the fallback when an existing
+    // GNOME/X11 action already owns the requested accelerator.
+    if (isGnomeSession() && registerGnomeShortcut(shortcut)) return;
     const QString token = QString("purrfind_%1").arg(QRandomGenerator::global()->generate());
     QVariantMap options{{"handle_token", token}, {"session_handle_token", token + "_session"}};
     const QDBusObjectPath expectedRequest = requestPath(token);
