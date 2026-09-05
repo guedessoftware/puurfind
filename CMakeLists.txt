@@ -342,6 +342,10 @@ set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
 set(CPACK_RPM_PACKAGE_VERSION "0.5.0")
 set(CPACK_RPM_PACKAGE_RELEASE "0.rc2")
+# Ship the default OCR data with Fedora/RHEL packages as well.  The shared
+# Tesseract library is discovered automatically, but language data is loaded
+# at runtime and therefore needs explicit RPM requirements.
+set(CPACK_RPM_PACKAGE_REQUIRES "tesseract-langpack-eng, tesseract-osd, tesseract-langpack-por")
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 set(CPACK_SOURCE_GENERATOR "TXZ")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "PurrFind-${PURRFIND_RELEASE_VERSION}-source")
