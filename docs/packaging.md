@@ -6,7 +6,13 @@ systemd user unit, desktop entry, XDG autostart entry for the hidden shortcut
 listener, AppStream metadata, and scalable hicolor icon.
 
 - DEB and RPM are generated with CPack from a Release build configured with
-  `-DCMAKE_INSTALL_PREFIX=/usr`.
+  `-DCMAKE_INSTALL_PREFIX=/usr`. Each package must be built inside its target
+  distribution (Ubuntu/Debian for DEB, Fedora for RPM); Qt and image/archive
+  libraries are not ABI-portable across distributions.
+- Debian builds install `dpkg-dev` so `dpkg-shlibdeps` records the exact ABI
+  package names (including Ubuntu's `t64` transitions). QML imports and the
+  multimedia plugin are loaded dynamically, so their runtime packages remain
+  explicit CPack dependencies as well.
 - `packaging/arch/PKGBUILD` is the Arch recipe. Release automation replaces its
   checksum placeholder before publication.
 - `scripts/release.sh` creates a sorted, timestamp-normalized source `.tar.xz`
