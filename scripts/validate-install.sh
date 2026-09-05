@@ -9,7 +9,6 @@ DESTDIR="$stage" cmake --install "$build_dir" >/dev/null
 for path in \
     usr/bin/purrfind \
     usr/bin/purrfind-indexer \
-    usr/lib/systemd/user/purrfind-indexer.service \
     usr/share/dbus-1/services/org.purrfind.Indexer.service \
     usr/share/applications/io.github.guedessoftware.PurrFind.desktop \
     usr/share/metainfo/io.github.guedessoftware.PurrFind.metainfo.xml \
@@ -17,6 +16,11 @@ for path in \
     etc/xdg/autostart/io.github.guedessoftware.PurrFind-autostart.desktop; do
     test -e "$stage/$path" || { echo "missing staged file: $path" >&2; exit 1; }
 done
+if ! test -e "$stage/usr/lib/systemd/user/purrfind-indexer.service" \
+    && ! test -e "$stage/usr/lib64/systemd/user/purrfind-indexer.service"; then
+    echo "missing staged file: usr/lib{,64}/systemd/user/purrfind-indexer.service" >&2
+    exit 1
+fi
 test -x "$stage/usr/bin/purrfind"
 test -x "$stage/usr/bin/purrfind-indexer"
 echo "CMake DESTDIR installation is complete"
