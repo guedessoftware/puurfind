@@ -272,6 +272,7 @@ endif()
 
 configure_file(packaging/purrfind-indexer.service.in purrfind-indexer.service @ONLY)
 configure_file(packaging/org.purrfind.Indexer.service.in org.purrfind.Indexer.service @ONLY)
+set(PURRFIND_SYSTEMD_USER_DIR "${CMAKE_INSTALL_PREFIX}/lib/systemd/user")
 
 install(TARGETS purrfind purrfind-indexer
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -280,7 +281,7 @@ if(PURRFIND_WITH_OCR)
     install(TARGETS purrfind-ocr-worker RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/purrfind-indexer.service
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user
+    DESTINATION ${PURRFIND_SYSTEMD_USER_DIR}
 )
 install(FILES packaging/io.github.guedessoftware.PurrFind.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
