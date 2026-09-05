@@ -16,9 +16,9 @@ for path in \
     etc/xdg/autostart/io.github.guedessoftware.PurrFind-autostart.desktop; do
     test -e "$stage/$path" || { echo "missing staged file: $path" >&2; exit 1; }
 done
-if ! test -e "$stage/usr/lib/systemd/user/purrfind-indexer.service" \
-    && ! test -e "$stage/usr/lib64/systemd/user/purrfind-indexer.service"; then
-    echo "missing staged file: usr/lib{,64}/systemd/user/purrfind-indexer.service" >&2
+service_file=$(find "$stage/usr" -path '*/systemd/user/purrfind-indexer.service' -type f -print -quit)
+if test -z "$service_file"; then
+    echo "missing staged file: */systemd/user/purrfind-indexer.service" >&2
     exit 1
 fi
 test -x "$stage/usr/bin/purrfind"
