@@ -24,7 +24,14 @@ int exifInteger(const Exiv2::ExifData &data, const char *key, int fallback = 0)
 {
     const auto found = data.findKey(Exiv2::ExifKey(key));
     if (found == data.end() || found->count() == 0) return fallback;
-    try { return static_cast<int>(found->toInt64()); } catch (...) { return fallback; }
+    // Exiv2 0.27 does not expose Exifdatum::toInt64 (it was added later),
+    // while both supported APIs provide a textual representation and float
+    // conversion.  Prefer the exact decimal form and fall back to the common
+    // numeric conversion for older metadata types.
+    bool ok = false;
+    const int parsed = QString::fromStdString(found->toString()).trimmed().toInt(&ok);
+    if (ok) return parsed;
+    try { return static_cast<int>(found->toFloat()); } catch (...) { return fallback; }
 }
 
 bool gpsCoordinate(const Exiv2::ExifData &data, const char *coordinateKey,
@@ -67,7 +74,7 @@ RichMetadata ImageMetadataProvider::extract(const FileRecord &file, const Cancel
     try {
         const QByteArray path = QFile::encodeName(file.path);
         auto image = Exiv2::ImageFactory::open(path.toStdString(), false);
-        if (image && !cancel.isCancelled()) {
+        if (image.get() && !cancel.isCancelled()) {
             image->readMetadata();
             const auto &exif = image->exifData();
             result.cameraMake = exifText(exif, "Exif.Image.Make");
