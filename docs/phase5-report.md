@@ -89,7 +89,7 @@ Artefatos gerados nesta revisão:
 - `dist/PurrFind-0.5.0-rc2-source.tar.xz` (tarball limpo);
 - `dist/purrfind-0.5.0-rc2-x86_64.deb`;
 - `dist/purrfind-0.5.0-rc2-x86_64.rpm`;
-- `dist/purrfind-0.5.0rc2-22-x86_64.pkg.tar.zst`;
+- `dist/purrfind-0.5.0rc2-23-x86_64.pkg.tar.zst`;
 - `dist/SHA256SUMS` com o source e os três pacotes nativos da revisão.
 
 ## Testes locais

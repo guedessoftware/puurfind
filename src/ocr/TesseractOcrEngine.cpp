@@ -1,4 +1,5 @@
 #include "ocr/TesseractOcrEngine.h"
+#include "ocr/OcrLanguageManager.h"
 
 #include <cmath>
 #include <limits>
@@ -110,7 +111,10 @@ OcrRecognition TesseractOcrEngine::recognize(const QImage &source, const QString
     const QByteArray language = languages.join('+').toUtf8();
     if (!impl_->api || impl_->languages != QString::fromUtf8(language)) {
         auto api = std::make_unique<tesseract::TessBaseAPI>();
-        if (api->Init(nullptr, language.constData(), tesseract::OEM_LSTM_ONLY) != 0) {
+        const QString dataDirectory = OcrLanguageManager::dataDirectory();
+        const QByteArray dataPath = dataDirectory.toUtf8();
+        const char *dataPathArg = dataPath.isEmpty() ? nullptr : dataPath.constData();
+        if (api->Init(dataPathArg, language.constData(), tesseract::OEM_LSTM_ONLY) != 0) {
             result.error = "OCR language pack not found: " + languages.join('+');
             return result;
         }

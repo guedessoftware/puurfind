@@ -13,6 +13,31 @@
 
 namespace purrfind {
 
+QString OcrLanguageManager::dataDirectory()
+{
+#ifdef PURRFIND_WITH_OCR
+    QStringList directories{
+        "/usr/share/tessdata", "/usr/local/share/tessdata",
+        "/usr/share/tesseract/tessdata",
+        "/usr/share/tesseract-ocr/5/tessdata", "/usr/share/tesseract-ocr/4.00/tessdata",
+    };
+    const QString prefix = qEnvironmentVariable("TESSDATA_PREFIX");
+    if (!prefix.isEmpty()) directories.prepend(prefix);
+    directories += QStandardPaths::locateAll(QStandardPaths::GenericDataLocation,
+                                              "tessdata", QStandardPaths::LocateDirectory);
+    QSet<QString> seen;
+    for (const auto &directory : directories) {
+        QDir data(directory);
+        if (!data.exists() && QFileInfo(directory + "/tessdata").isDir()) data.setPath(directory + "/tessdata");
+        const QString canonical = data.absolutePath();
+        if (!data.exists() || seen.contains(canonical)) continue;
+        seen.insert(canonical);
+        if (!data.entryList({"*.traineddata"}, QDir::Files).isEmpty()) return canonical;
+    }
+#endif
+    return {};
+}
+
 QStringList OcrLanguageManager::availableLanguages()
 {
     static const QStringList cached = [] {
