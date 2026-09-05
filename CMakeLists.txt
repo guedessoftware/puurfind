@@ -319,8 +319,20 @@ endif()
 # Qt QML modules are runtime dependencies of the bundled QML interface and
 # must be declared explicitly; otherwise `dpkg -i` leaves an apparently
 # installed application that cannot start with missing libQt6*.so errors.
+# On Debian-family builders dpkg-shlibdeps resolves the exact ABI package
+# names for the target distribution (including t64 transitions).  Keep a
+# portable fallback for CPack runs on non-Debian hosts where that tool is not
+# installed; alternatives cover both Debian 12 and Ubuntu 24.04 names.
+find_program(DPKG_SHLIBDEPS_EXECUTABLE dpkg-shlibdeps)
+# QML imports and multimedia plugins are loaded at runtime and therefore are
+# intentionally absent from the ELF NEEDED list.  Keep them as explicit
+# dependencies even when dpkg-shlibdeps is available.
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
-    "libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6multimedia6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6quickcontrols2-6 (>= 6.4), libqt6widgets6 (>= 6.4), libqt6opengl6 (>= 6.4), libqt6svg6 (>= 6.4), qml6-module-qtqml-workerscript, qml6-module-qtquick-controls, qml6-module-qtquick-dialogs, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtquick-window, qml6-module-qtmultimedia, qt6-image-formats-plugins, libsqlite3-0, libx11-6, libglx0, libopengl0, libpoppler-qt6-3, libzip4, libxml2, libexiv2-27, libtesseract5, libarchive13 | libarchive13t64, libcurl4 | libcurl4t64")
+    "libqt6multimedia6, libqt6quickcontrols2-6, libqt6opengl6 | libqt6opengl6t64, libqt6svg6, qml6-module-qtquick, qml6-module-qtqml-workerscript, qml6-module-qtquick-controls, qml6-module-qtquick-dialogs, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtquick-window, qml6-module-qtmultimedia, qt6-image-formats-plugins")
+if(NOT DPKG_SHLIBDEPS_EXECUTABLE)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS
+        "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6widgets6 (>= 6.4), libsqlite3-0, libx11-6, libglx0, libopengl0, libpoppler-qt6-3, libzip4 | libzip4t64, libxml2, libexiv2-27, libtesseract5, libarchive13 | libarchive13t64, libcurl4 | libcurl4t64")
+endif()
 set(CPACK_DEBIAN_PACKAGE_SUGGESTS "tesseract-ocr-eng, tesseract-ocr-por")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
@@ -329,5 +341,5 @@ set(CPACK_RPM_PACKAGE_RELEASE "0.rc2")
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 set(CPACK_SOURCE_GENERATOR "TXZ")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "PurrFind-${PURRFIND_RELEASE_VERSION}-source")
-set(CPACK_SOURCE_IGNORE_FILES "/build[^/]*/;/dist/;/.git/;/.cache/;\\.sqlite3(-wal|-shm)?$;~$")
+set(CPACK_SOURCE_IGNORE_FILES "/build[^/]*/;/dist/;/.git/;/.cache/;\\\\.sqlite3(-wal|-shm)?$;~$")
 include(CPack)
