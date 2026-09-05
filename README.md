@@ -61,6 +61,10 @@ attached to the [GitHub release](https://github.com/guedessoftware/puurfind/rele
 
 Verify downloads with [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
 
+For Debian/Ubuntu, prefer `apt install ./purrfind-*.deb`: it installs the Qt,
+QML and multimedia runtime dependencies automatically. If the package was
+installed previously with `dpkg -i`, repair dependencies with `sudo apt -f install`.
+
 > Flatpak is not included in this beta. PurrFind's persistent user indexer and
 > explicit filesystem roots need a portal/sandbox design that preserves the
 > same functionality without over-broad permissions.

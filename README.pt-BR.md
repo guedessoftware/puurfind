@@ -59,6 +59,11 @@ A beta pública atual é a **0.5.0-rc2**. Os pacotes e o código-fonte estão na
 
 Confira os downloads usando [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
 
+No Debian/Ubuntu, prefira `apt install ./purrfind-*.deb`: ele instala
+automaticamente as dependências de execução do Qt, QML e multimídia. Se o
+pacote foi instalado anteriormente com `dpkg -i`, corrija as dependências com
+`sudo apt -f install`.
+
 > Flatpak não está incluído nesta beta. O indexador persistente e as raízes de
 > arquivos escolhidas pelo usuário precisam de um desenho de portal/sandbox
 > que mantenha a funcionalidade sem permissões excessivas.
