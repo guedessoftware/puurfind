@@ -330,7 +330,11 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
     // GNOME 46 (Ubuntu 24.04) does not expose the GlobalShortcuts portal.
     // Its user custom-keybindings API is also the fallback when an existing
     // GNOME/X11 action already owns the requested accelerator.
-    if (isGnomeSession() && registerGnomeShortcut(shortcut)) return;
+    // Do not rely exclusively on XDG_CURRENT_DESKTOP: launchers and virtual
+    // machine sessions sometimes omit it even though the GNOME schemas are
+    // available. The helper is harmless elsewhere and simply fails when the
+    // schema is not installed.
+    if (registerGnomeShortcut(shortcut)) return;
     const QString token = QString("purrfind_%1").arg(QRandomGenerator::global()->generate());
     QVariantMap options{{"handle_token", token}, {"session_handle_token", token + "_session"}};
     const QDBusObjectPath expectedRequest = requestPath(token);
