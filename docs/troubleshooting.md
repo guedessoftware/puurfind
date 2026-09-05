@@ -36,6 +36,12 @@ If systemd reports a failed start, inspect the actual cause with
 active service is healthy; use `systemctl --user restart purrfind-indexer.service`
 when replacing a running instance.
 
+If the status shows `218/CAPABILITIES`, the installed unit is from an older
+build that used system-manager-only sandbox options. Reinstall the current
+package, run `systemctl --user daemon-reload`, and retry; the current unit
+keeps user-manager-compatible protections and allows the index to be written
+under the user's XDG data directory.
+
 ## inotify watch limit
 
 Settings reports when `inotify_add_watch` returns `ENOSPC`, shows the kernel
