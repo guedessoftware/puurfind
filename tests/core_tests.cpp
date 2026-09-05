@@ -110,8 +110,9 @@ int main(int argc, char **argv)
               && defaultConfig.excludedPaths.contains(defaultHome + "/.local")
               && defaultConfig.excludedPaths.contains(defaultHome + "/.cache")
               && defaultConfig.excludedPaths.contains(purrfind::Config::dataDirectory())
-              && defaultConfig.ocrImagesEnabled,
-          "default scope keeps HOME, enables image OCR, and excludes application state");
+              && defaultConfig.ocrImagesEnabled
+              && defaultConfig.ocrLanguages == QStringList{"eng", "osd", "por"},
+          "default scope keeps HOME, enables complete OCR, and excludes application state");
     for (int historical = 1; historical <= 5; ++historical) {
         const QString legacyPath = temporary.path() + QString("/schema-v%1.sqlite3").arg(historical);
         purrfind::Database legacy;

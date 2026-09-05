@@ -23,6 +23,7 @@ restricts a query to recognized text. Results carry an OCR badge, highlighted
 snippet, confidence-adjusted score, and PDF page number for the existing preview.
 
 Tesseract language files are discovered locally. A pt-BR locale initially
-selects `por+eng` when available; other locales start with `eng`. Settings show
-only installed packs and never download data. Distribution package names vary,
-but commonly resemble `tesseract-data-eng` and `tesseract-data-por`.
+selects English, OSD, and Portuguese when available. Settings show only
+installed packs and never download data. Distribution package names vary, but
+commonly resemble `tesseract-data-eng`, `tesseract-data-osd`, and
+`tesseract-data-por`.

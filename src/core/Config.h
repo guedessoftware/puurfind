@@ -27,7 +27,7 @@ struct ConfigData {
     // An explicit user choice to disable it is still persisted in config.json.
     bool ocrImagesEnabled{true};
     bool ocrPaused{false};
-    QStringList ocrLanguages{"por", "eng"};
+    QStringList ocrLanguages{"eng", "osd", "por"};
     QString ocrResourceProfile{"low"};
     bool ocrReduceOnBattery{true};
     bool ocrPauseBelowThirtyPercent{true};

@@ -48,7 +48,7 @@ Popup {
         usageRanking.checked = config.usageRankingEnabled !== false
         ocrPdf.checked = config.ocrPdfEnabled !== false
         ocrImages.checked = config.ocrImagesEnabled === true
-        let ocrLanguages = config.ocrLanguages || ["por", "eng"]
+        let ocrLanguages = config.ocrLanguages || ["eng", "osd", "por"]
         ocrLanguageModel.clear()
         for (let code of (dialog.indexStatus.ocrAvailableLanguages || [])) {
             let display = code === "por" ? "Português" : code === "eng" ? "English" : code
@@ -119,7 +119,7 @@ Popup {
                        ocrDpi: config.ocrDpi || 200,
                        ocrPageTimeoutSeconds: config.ocrPageTimeoutSeconds || 90,
                        ocrExcludedPaths: ocrExcluded}
-        let previous = (config.ocrLanguages || ["por", "eng"]).slice().sort().join("+")
+        let previous = (config.ocrLanguages || ["eng", "osd", "por"]).slice().sort().join("+")
         let next = ocrLanguages.slice().sort().join("+")
         if (previous !== next && (dialog.indexStatus.ocrProcessed || 0) > 0) {
             pendingConfig = updated

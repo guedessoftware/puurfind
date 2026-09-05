@@ -5,7 +5,6 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QLocale>
 #include <QSaveFile>
 #include <QStandardPaths>
 
@@ -97,8 +96,9 @@ ConfigData Config::defaults()
         home + "/.vscode",
         clean(dataDirectory()),
     };
-    result.ocrLanguages = QLocale::system().language() == QLocale::Portuguese
-        ? QStringList{"por", "eng"} : QStringList{"eng"};
+    // Ship a complete OCR default. The settings UI still lists only packs
+    // installed on the system, and explicit user selections are preserved.
+    result.ocrLanguages = {"eng", "osd", "por"};
     return result;
 }
 

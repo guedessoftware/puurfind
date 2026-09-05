@@ -334,10 +334,10 @@ if(NOT DPKG_SHLIBDEPS_EXECUTABLE)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS
         "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6widgets6 (>= 6.4), libsqlite3-0, libx11-6, libglx0, libopengl0, libpoppler-qt6-3, libzip4 | libzip4t64, libxml2, libexiv2-27, libtesseract5, libarchive13 | libarchive13t64, libcurl4 | libcurl4t64")
 endif()
-# The default configuration enables OCR (and selects eng/por for a Portuguese
-# locale).  Recommends makes those language data packages install with apt by
+# The default configuration enables OCR and selects English, orientation/script,
+# and Portuguese packs. Recommends makes those language data packages install by
 # default while still allowing minimal installations with --no-install-recommends.
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "tesseract-ocr-eng, tesseract-ocr-por")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "tesseract-ocr-eng, tesseract-ocr-osd, tesseract-ocr-por")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
 set(CPACK_RPM_PACKAGE_VERSION "0.5.0")

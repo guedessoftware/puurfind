@@ -66,11 +66,11 @@ distribution package for `eng`, `por`, or the desired language, then restart
 the indexer. On Ubuntu/Debian, the default Portuguese setup is:
 
 ```sh
-sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-por
+sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd tesseract-ocr-por
 systemctl --user restart purrfind-indexer.service
 ```
 
-The DEB package recommends the English and Portuguese packs automatically;
+The DEB package recommends the English, OSD, and Portuguese packs automatically;
 the explicit command is useful after installing with `--no-install-recommends`.
 PurrFind never downloads language data.
 
