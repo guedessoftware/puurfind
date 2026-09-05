@@ -226,7 +226,11 @@ bool GlobalShortcut::registerGnomeShortcut(const QString &shortcut)
     const QRegularExpression quoted(R"('([^']+)')");
     auto match = quoted.globalMatch(QString::fromUtf8(configured));
     while (match.hasNext()) paths.append(match.next().captured(1));
-    if (!paths.contains(QString::fromLatin1(path))) paths.append(QString::fromLatin1(path));
+    // Put PurrFind first so an older custom binding for the same accelerator
+    // (for example a desktop file search action bound to Super+F) does not win
+    // merely because it was installed earlier.
+    paths.removeAll(QString::fromLatin1(path));
+    paths.prepend(QString::fromLatin1(path));
     QStringList quotedPaths;
     for (const auto &entry : paths) quotedPaths.append("'" + entry + "'");
     if (!runGsettings({"set", schema, key, "[" + quotedPaths.join(", ") + "]"})) return false;
