@@ -324,6 +324,11 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
     requestedShortcut_ = shortcut;
     error_.clear();
     releaseX11Shortcut();
+    // GNOME's Shell owns some accelerators before they reach X11, even in an
+    // Xorg session. Prefer its custom-keybindings backend whenever available
+    // so Super+F cannot be reported as grabbed while another desktop action
+    // still receives it.
+    if (isGnomeSession() && registerGnomeShortcut(shortcut)) return;
     // XWayland can report a successful X11 grab while the compositor keeps
     // Super-key events. Prefer the compositor-aware path on Wayland.
     if (!isWaylandSession() && registerX11Shortcut(shortcut)) return;
