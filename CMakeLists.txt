@@ -320,7 +320,7 @@ endif()
 # must be declared explicitly; otherwise `dpkg -i` leaves an apparently
 # installed application that cannot start with missing libQt6*.so errors.
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
-    "libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6multimedia6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6quickcontrols2-6 (>= 6.4), libqt6widgets6 (>= 6.4), libqt6svg6 (>= 6.4), qml6-module-qtqml-workerscript, qml6-module-qtquick-controls, qml6-module-qtquick-dialogs, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtquick-window, qml6-module-qtmultimedia, qt6-image-formats-plugins, libsqlite3-0, libx11-6, libpoppler-qt6-3, libzip4, libxml2, libexiv2-27, libtesseract5")
+    "libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6multimedia6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6quickcontrols2-6 (>= 6.4), libqt6widgets6 (>= 6.4), libqt6opengl6 (>= 6.4), libqt6svg6 (>= 6.4), qml6-module-qtqml-workerscript, qml6-module-qtquick-controls, qml6-module-qtquick-dialogs, qml6-module-qtquick-layouts, qml6-module-qtquick-templates, qml6-module-qtquick-window, qml6-module-qtmultimedia, qt6-image-formats-plugins, libsqlite3-0, libx11-6, libglx0, libopengl0, libpoppler-qt6-3, libzip4, libxml2, libexiv2-27, libtesseract5, libarchive13 | libarchive13t64, libcurl4 | libcurl4t64")
 set(CPACK_DEBIAN_PACKAGE_SUGGESTS "tesseract-ocr-eng, tesseract-ocr-por")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
