@@ -18,7 +18,8 @@ class InotifyWatcher : public QObject {
 public:
     explicit InotifyWatcher(QObject *parent = nullptr);
     ~InotifyWatcher() override;
-    bool start(const QStringList &roots, const QStringList &exclusions, QString *error = nullptr);
+    bool start(const QStringList &roots, const QStringList &exclusions,
+               QString *error = nullptr, bool excludeHidden = false);
     void stop();
     int watchCount() const { return watches_.size(); }
     bool watchLimitReached() const { return watchLimitReached_; }
@@ -33,6 +34,7 @@ private:
     void addDirectory(const QString &path);
     void enqueueTree(const QString &root);
     void scanWatchBatch();
+    bool isIgnored(const QString &path) const;
 
     int descriptor_{-1};
     QSocketNotifier *notifier_{nullptr};
@@ -41,7 +43,9 @@ private:
     QSet<QString> queuedPaths_;
     QQueue<QString> pendingDirectories_;
     QTimer scanTimer_;
+    QStringList roots_;
     QStringList exclusions_;
+    bool excludeHidden_{false};
     QHash<uint32_t, FsEvent> movedFrom_;
     bool watchLimitReached_{false};
     qint64 systemWatchLimit_{-1};

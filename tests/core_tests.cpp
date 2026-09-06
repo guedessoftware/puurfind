@@ -106,6 +106,8 @@ int main(int argc, char **argv)
     const purrfind::ConfigData defaultConfig = purrfind::Config::defaults();
     const QString defaultHome = QDir::homePath();
     check(defaultConfig.includedPaths == QStringList{defaultHome}
+              && defaultConfig.excludeHidden
+              && !defaultConfig.showHidden
               && defaultConfig.excludedPaths.contains(defaultHome + "/.config")
               && defaultConfig.excludedPaths.contains(defaultHome + "/.local")
               && defaultConfig.excludedPaths.contains(defaultHome + "/.cache")
@@ -185,7 +187,7 @@ int main(int argc, char **argv)
     phase3Config.usageRankingEnabled = false;
     const QString phase3Json = purrfind::Config::toJson(phase3Config);
     purrfind::ConfigData restoredConfig;
-    check(phase3Json.contains("\"version\":4")
+    check(phase3Json.contains("\"version\":5")
               && purrfind::Config::fromJson(phase3Json, &restoredConfig, &error)
               && !restoredConfig.previewAutomatically
               && !restoredConfig.advancedImageMetadata
@@ -273,6 +275,17 @@ int main(int argc, char **argv)
     check(purrfind::FileSystem::normalizePath("/tmp/a/../b") == "/tmp/b", "path normalization");
     check(purrfind::FileSystem::isWithin("/tmp/base/file", "/tmp/base"), "path containment");
     check(!purrfind::FileSystem::isWithin("/tmp/baseball", "/tmp/base"), "path containment boundary");
+    check(purrfind::FileSystem::isHiddenWithin("/tmp/base/.cache/file", "/tmp/base")
+              && !purrfind::FileSystem::isHiddenWithin("/tmp/base/.cache/file", "/tmp/base/.cache"),
+          "hidden path policy permits explicit hidden roots");
+    const QString portalHome = QDir::homePath();
+    const QString portalPath = "/run/user/1000/doc/purrfind-test/" + QFileInfo(portalHome).fileName() + "/Pictures";
+    purrfind::ConfigData portalConfig;
+    check(purrfind::Config::fromJson(
+              QString("{\"includedPaths\":[\"%1\"],\"version\":4}").arg(portalPath),
+              &portalConfig, &error)
+              && portalConfig.includedPaths.first() == portalHome + "/Pictures",
+          "document portal paths resolve to the real home directory");
 
     const QStringList unusualNames{
         "space name.txt", "tab\tname.txt", "line\nname.txt", "aspas-'\".txt",

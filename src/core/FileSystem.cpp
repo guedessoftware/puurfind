@@ -23,6 +23,18 @@ bool FileSystem::isWithin(const QString &path, const QString &directory)
     return candidate.startsWith(base);
 }
 
+bool FileSystem::isHiddenWithin(const QString &path, const QString &root)
+{
+    const QString candidate = normalizePath(path);
+    const QString base = normalizePath(root);
+    if (!isWithin(candidate, base) || candidate == base) return false;
+    const QString relative = QDir(base).relativeFilePath(candidate);
+    for (const auto &component : relative.split('/', Qt::SkipEmptyParts)) {
+        if (component != "." && component != ".." && component.startsWith('.')) return true;
+    }
+    return false;
+}
+
 bool FileSystem::isExcluded(const QString &path, const QStringList &exclusions)
 {
     for (const auto &excluded : exclusions) {
@@ -69,4 +81,3 @@ std::optional<FileRecord> FileSystem::inspect(const QString &path, const QString
 }
 
 } // namespace purrfind
-

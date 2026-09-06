@@ -499,7 +499,7 @@ ApplicationWindow {
                                             elide: Text.ElideRight; maximumLineCount: 1; wrapMode: Text.NoWrap; clip: true
                                         }
                                         Text {
-                                            Layout.fillWidth: true; Layout.minimumWidth: 0; text: parentPath
+                                            Layout.fillWidth: true; Layout.minimumWidth: 0; text: purrfindController.displayPath(parentPath)
                                             color: window.theme.subtle; font.pixelSize: 10
                                             elide: Text.ElideMiddle; maximumLineCount: 1; wrapMode: Text.NoWrap; clip: true
                                         }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0-rc3] - 2026-09-05
+
+- Fixed migration of older settings so system exclusions and image OCR defaults are preserved.
+- Excluded hidden paths by default while allowing explicitly mapped hidden roots.
+- Canonicalized Flatpak document-portal paths and shortened home paths in the UI.
+- Improved cross-desktop global shortcut metadata and released refreshed DEB, RPM, Arch and Flatpak packages.
+
 ## [0.5.0-rc2] - 2026-09-04
 
 ### Changed

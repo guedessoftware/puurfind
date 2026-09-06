@@ -30,6 +30,7 @@ Popup {
         for (let path of excluded) excludedModel.append({"path": path})
         for (let path of (config.contentExcludedPaths || [])) contentExcludedModel.append({"path": path})
         for (let path of (config.ocrExcludedPaths || [])) ocrExcludedModel.append({"path": path})
+        excludeHiddenCheck.checked = config.excludeHidden !== false
         hiddenCheck.checked = config.showHidden !== false
         resultLimit.value = config.maxResults || 100
         shortcutField.text = config.globalShortcut || "Super+F"
@@ -47,7 +48,7 @@ Popup {
         metadataAdvanced.checked = config.advancedImageMetadata !== false
         usageRanking.checked = config.usageRankingEnabled !== false
         ocrPdf.checked = config.ocrPdfEnabled !== false
-        ocrImages.checked = config.ocrImagesEnabled === true
+        ocrImages.checked = config.ocrImagesEnabled !== false
         let ocrLanguages = config.ocrLanguages || ["eng", "osd", "por"]
         ocrLanguageModel.clear()
         for (let code of (dialog.indexStatus.ocrAvailableLanguages || [])) {
@@ -96,7 +97,8 @@ Popup {
         if (xlsxType.checked) types.push("xlsx"); if (pptxType.checked) types.push("pptx")
         if (odtType.checked) types.push("odt"); if (odsType.checked) types.push("ods")
         if (odpType.checked) types.push("odp")
-        let updated = {version: 4, includedPaths: included, excludedPaths: excluded,
+        let updated = {version: 5, includedPaths: included, excludedPaths: excluded,
+                       excludeHidden: excludeHiddenCheck.checked,
                        showHidden: hiddenCheck.checked, maxResults: resultLimit.value,
                        globalShortcut: shortcutField.text,
                        themeMode: ["system", "light", "dark"][themeSelect.currentIndex] || "system",
@@ -193,7 +195,7 @@ Popup {
                             RowLayout {
                                 required property int index; required property string path
                                 Layout.fillWidth: true
-                                Text { text: path; color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                                Text { text: purrfindController.displayPath(path); color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
                                 ToolButton { text: "Remove"; onClicked: includedModel.remove(index) }
                             }
                         }
@@ -205,9 +207,19 @@ Popup {
                             RowLayout {
                                 required property int index; required property string path
                                 Layout.fillWidth: true
-                                Text { text: path; color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                                Text { text: purrfindController.displayPath(path); color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
                                 ToolButton { text: "Remove"; onClicked: excludedModel.remove(index) }
                             }
+                        }
+                        CheckBox {
+                            id: excludeHiddenCheck
+                            text: "Exclude hidden files and folders by default"
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Hidden items stay out of the index. Add a hidden folder above to index it explicitly."
+                        }
+                        Label {
+                            text: "System and application folders are blocked automatically."
+                            color: colors.subtle; font.pixelSize: 10; wrapMode: Text.Wrap
                         }
                         Button { text: "+ Add exclusion"; onClicked: { addTarget = "excluded"; folderDialog.open() } }
                     }
@@ -328,7 +340,7 @@ Popup {
                             RowLayout {
                                 required property int index; required property string path
                                 Layout.fillWidth: true
-                                Text { text: path; color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                                Text { text: purrfindController.displayPath(path); color: colors.text; elide: Text.ElideMiddle; Layout.fillWidth: true }
                                 ToolButton { text: "Remove"; onClicked: ocrExcludedModel.remove(index) }
                             }
                         }

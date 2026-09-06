@@ -1,19 +1,19 @@
 # Maintainer: Guedes Software <guedessoftware@users.noreply.github.com>
 pkgname=purrfind
-pkgver=0.5.0rc2
-pkgrel=26
+pkgver=0.5.0rc3
+pkgrel=27
 pkgdesc='Fast, native file and content search for Linux'
 arch=('x86_64')
 url='https://github.com/guedessoftware/PurrFind'
 license=('GPL-3.0-or-later')
 depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'qt6-imageformats' 'libx11' 'sqlite' 'poppler-qt6' 'libzip' 'libxml2' 'exiv2' 'tesseract' 'hicolor-icon-theme')
 optdepends=('tesseract-data-eng: additional English OCR data' 'tesseract-data-osd: additional orientation/script OCR data' 'tesseract-data-por: additional Portuguese OCR data')
-makedepends=('cmake' 'ninja')
+makedepends=('cmake' 'ninja' 'tesseract-data-eng' 'tesseract-data-osd' 'tesseract-data-por')
 checkdepends=('ttf-dejavu')
 # CMake bundles eng/osd/por traineddata when building the package; these
 # optdepends are only for additional or newer language data.
-source=("PurrFind-0.5.0-rc2-source.tar.xz")
-sha256sums=('01a3e43dd5c6d71d07e94d1fa7f6fe28e28e732f69a85aff427c4bdc1af2f371')
-build() { cmake -S "PurrFind-0.5.0-rc2" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr; cmake --build build; }
+source=("PurrFind-0.5.0-rc3-source.tar.xz")
+sha256sums=('5713c87f4e5d5f338e1a93f76ad17c7f0636c216633c89c18e1f9f0768f4e9a2')
+build() { cmake -S "PurrFind-0.5.0-rc3" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr; cmake --build build; }
 check() { QT_QPA_PLATFORM=offscreen TESSDATA_PREFIX=/usr/share/tessdata ctest --test-dir build --output-on-failure; }
 package() { DESTDIR="$pkgdir" cmake --install build; }

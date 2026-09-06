@@ -137,7 +137,8 @@ bool IndexerService::initialize(QString *error)
     metadataQueue_.start(config_);
     ocrQueue_.start(config_);
     QString watchError;
-    if (!watcher_.start(config_.includedPaths, config_.excludedPaths, &watchError)) {
+    if (!watcher_.start(config_.includedPaths, config_.excludedPaths, &watchError,
+                        config_.excludeHidden)) {
         qCWarning(logIndexer).noquote() << watchError;
         status_.lastError = watchError;
     }
@@ -168,9 +169,10 @@ void IndexerService::startCrawl()
 
     const auto paths = config_.includedPaths;
     const auto exclusions = config_.excludedPaths;
+    const bool excludeHidden = config_.excludeHidden;
     const auto databasePath = Config::databasePath();
     const auto generation = generation_;
-    crawlerThread_ = std::thread([this, paths, exclusions, databasePath, generation] {
+    crawlerThread_ = std::thread([this, paths, exclusions, databasePath, generation, excludeHidden] {
         qint64 total = 0;
         QStringList errors;
         for (const auto &root : paths) {
@@ -186,7 +188,7 @@ void IndexerService::startCrawl()
                         metadataQueue_.notifyWork();
                         ocrQueue_.notifyWork();
                     }, Qt::QueuedConnection);
-                }, &cancelCrawl_);
+                }, &cancelCrawl_, excludeHidden);
             total += result.indexed;
             if (!result.error.isEmpty()) errors.append(result.error);
         }
@@ -227,7 +229,10 @@ void IndexerService::processEvents(const QVector<FsEvent> &events)
             metadataQueue_.invalidate(event.oldPath);
             ocrQueue_.invalidate(event.oldPath);
             const QString root = rootFor(event.path);
-            if (auto record = FileSystem::inspect(event.path, root, generation_, &error))
+            if (root.isEmpty() || FileSystem::isExcluded(event.path, config_.excludedPaths)
+                || (config_.excludeHidden && FileSystem::isHiddenWithin(event.path, root))) {
+                ok = database_.removePath(event.oldPath, event.directory, &error);
+            } else if (auto record = FileSystem::inspect(event.path, root, generation_, &error))
                 ok = database_.movePathPreservingContent(event.oldPath, *record, event.directory, &error);
             else
                 ok = database_.removePath(event.oldPath, event.directory, &error);
@@ -241,7 +246,8 @@ void IndexerService::processEvents(const QVector<FsEvent> &events)
             metadataQueue_.invalidate(event.path);
             ocrQueue_.invalidate(event.path);
             const QString root = rootFor(event.path);
-            if (root.isEmpty() || FileSystem::isExcluded(event.path, config_.excludedPaths)) continue;
+            if (root.isEmpty() || FileSystem::isExcluded(event.path, config_.excludedPaths)
+                || (config_.excludeHidden && FileSystem::isHiddenWithin(event.path, root))) continue;
             if (auto record = FileSystem::inspect(event.path, root, generation_, &error))
                 ok = database_.upsert(*record, &error);
             else
@@ -423,7 +429,7 @@ void IndexerService::applyPendingConfig()
             database_.removePath(oldRoot, true, nullptr);
     }
     QString error;
-    watcher_.start(config_.includedPaths, config_.excludedPaths, &error);
+    watcher_.start(config_.includedPaths, config_.excludedPaths, &error, config_.excludeHidden);
     contentQueue_.configure(config_);
     metadataQueue_.configure(config_);
     ocrQueue_.configure(config_);
@@ -527,7 +533,8 @@ bool IndexerService::RebuildIndex()
     contentQueue_.start(config_);
     metadataQueue_.start(config_);
     ocrQueue_.start(config_);
-    if (!watcher_.start(config_.includedPaths, config_.excludedPaths, &error))
+    if (!watcher_.start(config_.includedPaths, config_.excludedPaths, &error,
+                        config_.excludeHidden))
         status_.lastError = error;
     startCrawl();
     return true;

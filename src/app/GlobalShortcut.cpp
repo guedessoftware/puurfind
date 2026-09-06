@@ -439,7 +439,7 @@ void GlobalShortcut::sessionResponse(uint response, const QVariantMap &results)
     session_ = QDBusObjectPath(sessionPath);
     const quint64 attempt = registrationGeneration_;
     PortalShortcutList shortcuts;
-    shortcuts.append({"show", {{"description", "Show PurrFind"},
+    shortcuts.append({"show", {{"description", "Abrir PurrFind"},
                                 {"preferred_trigger", portalTrigger(requestedShortcut_)}}});
     const QString token = QString("purrfind_bind_%1").arg(QRandomGenerator::global()->generate());
     QVariantMap options{{"handle_token", token}};

@@ -12,7 +12,8 @@ namespace purrfind {
 
 CrawlResult Crawler::crawl(const QString &databasePath, const QString &root,
                            const QStringList &exclusions, qint64 generation,
-                           const Progress &progress, const std::atomic_bool *cancelled)
+                           const Progress &progress, const std::atomic_bool *cancelled,
+                           bool excludeHidden)
 {
     CrawlResult result;
     Database database;
@@ -55,7 +56,8 @@ CrawlResult Crawler::crawl(const QString &databasePath, const QString &root,
         std::error_code typeError;
         const bool directory = iterator->is_directory(typeError);
         const bool symlink = iterator->is_symlink(typeError);
-        if (FileSystem::isExcluded(path, exclusions)) {
+        if (FileSystem::isExcluded(path, exclusions)
+            || (excludeHidden && FileSystem::isHiddenWithin(path, normalizedRoot))) {
             if (directory) iterator.disable_recursion_pending();
             ++result.skipped;
             iterator.increment(iteratorError);

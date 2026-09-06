@@ -24,10 +24,14 @@ InotifyWatcher::InotifyWatcher(QObject *parent) : QObject(parent)
 }
 InotifyWatcher::~InotifyWatcher() { stop(); }
 
-bool InotifyWatcher::start(const QStringList &roots, const QStringList &exclusions, QString *error)
+bool InotifyWatcher::start(const QStringList &roots, const QStringList &exclusions,
+                           QString *error, bool excludeHidden)
 {
     stop();
+    roots_.reserve(roots.size());
+    for (const auto &root : roots) roots_.append(FileSystem::normalizePath(root));
     exclusions_ = exclusions;
+    excludeHidden_ = excludeHidden;
     watchLimitReached_ = false;
     QFile limitFile("/proc/sys/fs/inotify/max_user_watches");
     if (limitFile.open(QIODevice::ReadOnly)) systemWatchLimit_ = limitFile.readAll().trimmed().toLongLong();
@@ -59,13 +63,27 @@ void InotifyWatcher::stop()
     queuedPaths_.clear();
     pendingDirectories_.clear();
     movedFrom_.clear();
+    roots_.clear();
+    excludeHidden_ = false;
+}
+
+bool InotifyWatcher::isIgnored(const QString &path) const
+{
+    const QString normalized = FileSystem::normalizePath(path);
+    if (FileSystem::isExcluded(normalized, exclusions_)) return true;
+    if (!excludeHidden_) return false;
+    QString bestRoot;
+    for (const auto &root : roots_) {
+        if (FileSystem::isWithin(normalized, root) && root.size() > bestRoot.size())
+            bestRoot = root;
+    }
+    return !bestRoot.isEmpty() && FileSystem::isHiddenWithin(normalized, bestRoot);
 }
 
 void InotifyWatcher::addDirectory(const QString &path)
 {
     const QString normalized = FileSystem::normalizePath(path);
-    if (descriptor_ < 0 || watchedPaths_.contains(normalized)
-        || FileSystem::isExcluded(normalized, exclusions_)) return;
+    if (descriptor_ < 0 || watchedPaths_.contains(normalized) || isIgnored(normalized)) return;
     const QByteArray encoded = QFile::encodeName(normalized);
     const uint32_t mask = IN_CREATE | IN_CLOSE_WRITE | IN_ATTRIB | IN_DELETE
         | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF | IN_MOVE_SELF;
@@ -88,7 +106,7 @@ void InotifyWatcher::enqueueTree(const QString &root)
     const QString normalized = FileSystem::normalizePath(root);
     const QFileInfo info(normalized);
     if (!info.isDir() || info.isSymLink() || queuedPaths_.contains(normalized)
-        || FileSystem::isExcluded(normalized, exclusions_)) return;
+        || isIgnored(normalized)) return;
     queuedPaths_.insert(normalized);
     pendingDirectories_.enqueue(normalized);
     if (!scanTimer_.isActive()) scanTimer_.start();
@@ -102,7 +120,7 @@ void InotifyWatcher::scanWatchBatch()
         const QString directory = pendingDirectories_.dequeue();
         queuedPaths_.remove(directory);
         const QFileInfo info(directory);
-        if (!info.isDir() || info.isSymLink() || FileSystem::isExcluded(directory, exclusions_)) continue;
+        if (!info.isDir() || info.isSymLink() || isIgnored(directory)) continue;
         addDirectory(directory);
         const QFileInfoList children = QDir(directory).entryInfoList(
             QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
@@ -134,7 +152,7 @@ void InotifyWatcher::readEvents()
             const QString path = name.isEmpty() ? directory : directory + '/' + name;
             const bool isDirectory = event->mask & IN_ISDIR;
             qCDebug(logTrace).noquote() << "inotify" << QString::number(event->mask, 16) << path;
-            if (FileSystem::isExcluded(path, exclusions_)) continue;
+            if (isIgnored(path)) continue;
             if (event->mask & IN_MOVED_FROM) {
                 FsEvent removed{EventKind::Remove, path, isDirectory, {}};
                 movedFrom_.insert(event->cookie, removed);

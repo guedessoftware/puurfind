@@ -8,6 +8,7 @@
 #include <QDBusPendingReply>
 #include <QDesktopServices>
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFutureWatcher>
@@ -459,6 +460,15 @@ QString AppController::iconUrl(const QString &mimeType, bool directory) const
 {
     const QString mime = directory ? "inode/directory" : (mimeType.isEmpty() ? "application/octet-stream" : mimeType);
     return "image://purrfind-preview/icon/" + QString::fromLatin1(QUrl::toPercentEncoding(mime));
+}
+
+QString AppController::displayPath(const QString &path) const
+{
+    const QString home = QDir::cleanPath(QDir::homePath());
+    const QString normalized = QDir::cleanPath(path);
+    if (normalized == home) return QStringLiteral("~");
+    if (normalized.startsWith(home + '/')) return '~' + normalized.mid(home.size());
+    return path;
 }
 
 } // namespace purrfind

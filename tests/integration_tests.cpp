@@ -114,6 +114,22 @@ int main(int argc, char **argv)
         std::cerr << "delete did not remove content\n"; return 1;
     }
 
+    const QString hiddenRoot = root.path() + "/.purrfind-hidden-exception";
+    if (!QDir().mkpath(hiddenRoot)) return 1;
+    QFile hiddenFile(hiddenRoot + "/hidden-policy-unique.txt");
+    if (!hiddenFile.open(QIODevice::WriteOnly) || hiddenFile.write("hidden-policy-token") <= 0) return 1;
+    hiddenFile.close();
+    const auto filteredHidden = purrfind::Crawler::crawl(databasePath, root.path(), {}, generation + 1,
+                                                          {}, nullptr, true);
+    if (!filteredHidden.error.isEmpty() || !search.search("hidden-policy-unique", 10, true).isEmpty()) {
+        std::cerr << "hidden paths were not excluded by default policy\n"; return 1;
+    }
+    const auto explicitHidden = purrfind::Crawler::crawl(databasePath, hiddenRoot, {}, generation + 2,
+                                                         {}, nullptr, true);
+    if (!explicitHidden.error.isEmpty() || search.search("hidden-policy-unique", 10, true).size() != 1) {
+        std::cerr << "explicit hidden root exception was not indexed\n"; return 1;
+    }
+
     const QString symlinkTree = root.path() + "/symlink-tree";
     if (!QDir().mkpath(symlinkTree + "/real/sub")) return 1;
     QFile cycleFile(symlinkTree + "/real/sub/only-once.txt");

@@ -24,6 +24,7 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.5.0~rc3" date="2026-09-05"><description><p>Bug-fix release: reliable hidden-folder exclusions, Flatpak portal paths, image OCR defaults, and clearer cross-desktop shortcut setup.</p></description></release>
     <release version="0.5.0~rc2" date="2026-09-04"><description><p>Lower resident memory, responsive configuration and watch setup, automatic OCR pipeline refresh, and refined search UI.</p></description></release>
     <release version="0.5.0~rc1" date="2026-09-04"><description><p>First public beta release candidate with recovery, hardening, CI, and packaging.</p></description></release>
     <release version="0.4.0" date="2026-09-04"/>

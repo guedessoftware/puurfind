@@ -71,6 +71,7 @@ public:
     Q_INVOKABLE void reindexOcr();
     Q_INVOKABLE void rebuildIndex();
     Q_INVOKABLE QString iconUrl(const QString &mimeType, bool directory) const;
+    Q_INVOKABLE QString displayPath(const QString &path) const;
     void reportError(const QString &message) { setError(message); }
 
 public slots:

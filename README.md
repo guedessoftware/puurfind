@@ -49,18 +49,18 @@ without leaving the application.
 
 ## Download the beta
 
-The current public beta is **0.5.0-rc2**. Packages and the source archive are
-attached to the [GitHub release](https://github.com/guedessoftware/puurfind/releases/tag/v0.5.0-rc2).
+The current public beta is **0.5.0-rc3**. Packages and the source archive are
+attached to the [GitHub release](https://github.com/guedessoftware/puurfind/releases/tag/v0.5.0-rc3).
 
 | Platform | Download | Install example |
 | --- | --- | --- |
-| Debian/Ubuntu | [`.deb`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.deb) | `sudo apt install ./purrfind-0.5.0-rc2-x86_64.deb` |
-| Fedora/RHEL | [`.rpm`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.rpm) | `sudo dnf install ./purrfind-0.5.0-rc2-x86_64.rpm` |
-| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst` |
-| Flatpak | [`.flatpak`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-x86_64.flatpak) · [manifesto](packaging/io.github.guedessoftware.PurrFind.yml) | `flatpak install --user ./PurrFind-0.5.0-rc2-x86_64.flatpak` |
-| Source | [`tar.xz`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-source.tar.xz) | See [Build](#build-from-source) |
+| Debian/Ubuntu | [`.deb`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/purrfind-0.5.0-rc3-x86_64.deb) | `sudo apt install ./purrfind-0.5.0-rc3-x86_64.deb` |
+| Fedora/RHEL | [`.rpm`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/purrfind-0.5.0-rc3-x86_64.rpm) | `sudo dnf install ./purrfind-0.5.0-rc3-x86_64.rpm` |
+| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/purrfind-0.5.0rc3-27-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc3-27-x86_64.pkg.tar.zst` |
+| Flatpak | [`.flatpak`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/PurrFind-0.5.0-rc3-x86_64.flatpak) · [manifesto](packaging/io.github.guedessoftware.PurrFind.yml) | `flatpak install --user ./PurrFind-0.5.0-rc3-x86_64.flatpak` |
+| Source | [`tar.xz`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/PurrFind-0.5.0-rc3-source.tar.xz) | See [Build](#build-from-source) |
 
-Verify downloads with [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
+Verify downloads with [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc3/SHA256SUMS).
 
 For Debian/Ubuntu, prefer `apt install ./purrfind-*.deb`: it installs the Qt,
 QML and multimedia runtime dependencies automatically. If the package was
@@ -85,8 +85,9 @@ modified:7d size:>10MB
 ```
 
 Use `kind:file` and `kind:folder`, or click the category tabs. The default
-roots and excluded folders are editable in Settings; hidden files remain
-searchable unless excluded explicitly.
+roots and excluded folders are editable in Settings. Hidden files and folders
+are excluded by default; adding a hidden folder as an indexed root is the
+explicit exception.
 
 ## Build from source
 

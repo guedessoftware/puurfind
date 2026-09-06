@@ -62,6 +62,19 @@ conflict appears in the overlay. As a portable fallback, bind `purrfind` in the
 desktop keyboard settings. If another application already owns the same X11
 combination, PurrFind reports the conflict instead of silently replacing it.
 
+The shortcut editor shown by a Wayland portal is drawn by the desktop (for
+example, Fedora's KDE/GNOME portal), not by PurrFind. Its keycaps and icon
+styling therefore follow the host portal theme; PurrFind supplies the stable
+application ID, name, icon and preferred trigger.
+
+## Hidden folders and Flatpak paths
+
+New installations exclude hidden files and folders from the index and list the
+common application/system directories in Settings. Adding a hidden folder as
+an explicit indexed root is the supported exception. Flatpak document-portal
+paths selected by the folder picker are converted back to the real `~` path so
+temporary `/run/user/.../doc/...` mount names are not indexed.
+
 ## OCR language packs
 
 Settings lists only installed Tesseract `.traineddata` files. Install the

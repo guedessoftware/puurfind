@@ -8,7 +8,10 @@ namespace purrfind {
 struct ConfigData {
     QStringList includedPaths;
     QStringList excludedPaths;
-    bool showHidden{true};
+    // Hidden files are not indexed by default. Adding a hidden directory as
+    // an explicit indexed root remains an intentional exception.
+    bool excludeHidden{true};
+    bool showHidden{false};
     int maxResults{100};
     QString globalShortcut{"Super+F"};
     // Visual theme preference: "system", "light", or "dark".

@@ -20,8 +20,8 @@ public:
     static CrawlResult crawl(const QString &databasePath, const QString &root,
                              const QStringList &exclusions, qint64 generation,
                              const Progress &progress = {},
-                             const std::atomic_bool *cancelled = nullptr);
+                             const std::atomic_bool *cancelled = nullptr,
+                             bool excludeHidden = false);
 };
 
 } // namespace purrfind
-

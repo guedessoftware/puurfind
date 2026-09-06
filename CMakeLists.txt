@@ -360,7 +360,7 @@ set(CPACK_PACKAGE_VERSION "0.5.0")
 set(CPACK_PACKAGE_FILE_NAME "purrfind-${PURRFIND_RELEASE_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
-set(CPACK_DEBIAN_PACKAGE_VERSION "0.5.0~rc2")
+set(CPACK_DEBIAN_PACKAGE_VERSION "0.5.0~rc3")
 # dpkg-shlibdeps is not available on every build host; make the architecture
 # deterministic instead of allowing CPack to fall back to i386.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
@@ -396,7 +396,7 @@ endif()
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
 set(CPACK_RPM_PACKAGE_VERSION "0.5.0")
-set(CPACK_RPM_PACKAGE_RELEASE "0.rc2")
+set(CPACK_RPM_PACKAGE_RELEASE "0.rc3")
 # If data bundling was disabled, keep explicit Fedora/RHEL language package
 # requirements. Otherwise only the shared Tesseract library is required.
 if(NOT PURRFIND_BUNDLE_OCR_DATA)
