@@ -17,6 +17,7 @@ QString OcrLanguageManager::dataDirectory()
 {
 #ifdef PURRFIND_WITH_OCR
     QStringList directories{
+        "/usr/share/purrfind/tessdata",
         "/usr/share/tessdata", "/usr/local/share/tessdata",
         "/usr/share/tesseract/tessdata",
         "/usr/share/tesseract-ocr/5/tessdata", "/usr/share/tesseract-ocr/4.00/tessdata",
@@ -44,6 +45,7 @@ QStringList OcrLanguageManager::availableLanguages()
         QStringList result;
 #ifdef PURRFIND_WITH_OCR
         QStringList directories{
+            "/usr/share/purrfind/tessdata",
             "/usr/share/tessdata", "/usr/local/share/tessdata",
             "/usr/share/tesseract/tessdata",
             "/usr/share/tesseract-ocr/5/tessdata", "/usr/share/tesseract-ocr/4.00/tessdata",

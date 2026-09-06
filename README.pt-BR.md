@@ -54,7 +54,8 @@ A beta pública atual é a **0.5.0-rc2**. Os pacotes e o código-fonte estão na
 | --- | --- | --- |
 | Debian/Ubuntu | [`.deb`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.deb) | `sudo apt install ./purrfind-0.5.0-rc2-x86_64.deb` |
 | Fedora/RHEL | [`.rpm`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.rpm) | `sudo dnf install ./purrfind-0.5.0-rc2-x86_64.rpm` |
-| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst` |
+| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst` |
+| Flatpak | [`.flatpak`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-x86_64.flatpak) · [manifesto](packaging/io.github.guedessoftware.PurrFind.yml) | `flatpak install --user ./PurrFind-0.5.0-rc2-x86_64.flatpak` |
 | Código-fonte | [`tar.xz`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-source.tar.xz) | Veja [Compilar](#compilar-do-código-fonte) |
 
 Confira os downloads usando [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
@@ -64,9 +65,10 @@ automaticamente as dependências de execução do Qt, QML e multimídia. Se o
 pacote foi instalado anteriormente com `dpkg -i`, corrija as dependências com
 `sudo apt -f install`.
 
-> Flatpak não está incluído nesta beta. O indexador persistente e as raízes de
-> arquivos escolhidas pelo usuário precisam de um desenho de portal/sandbox
-> que mantenha a funcionalidade sem permissões excessivas.
+O Flatpak inclui os mesmos componentes de PDF, escritório, metadados e OCR.
+Ele executa o indexador dentro do sandbox e usa o portal GlobalShortcuts no
+Wayland; o `$HOME` é liberado somente para leitura. Pastas fora da home
+precisam de uma permissão adicional nas configurações do Flatpak.
 
 ## Sintaxe de busca
 
@@ -110,10 +112,9 @@ systemctl --user enable --now purrfind-indexer.service
 ```
 
 O listener da bandeja/atalho é registrado pelo autostart XDG e inicia no
-próximo login gráfico. Para ativá-lo imediatamente após a instalação, inicie-o
-em segundo plano na sua sessão de usuário:
-`nohup /usr/bin/purrfind --background >/tmp/purrfind.log 2>&1 & disown`.
-O processo permanece na bandeja para manter o atalho global ativo.
+próximo login gráfico. No Wayland, o registro do portal é tentado novamente
+após o login, evitando que um portal iniciado com atraso deixe o `Super+F`
+desativado permanentemente.
 
 ## Atalhos e bandeja
 

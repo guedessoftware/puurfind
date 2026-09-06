@@ -56,7 +56,8 @@ attached to the [GitHub release](https://github.com/guedessoftware/puurfind/rele
 | --- | --- | --- |
 | Debian/Ubuntu | [`.deb`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.deb) | `sudo apt install ./purrfind-0.5.0-rc2-x86_64.deb` |
 | Fedora/RHEL | [`.rpm`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0-rc2-x86_64.rpm) | `sudo dnf install ./purrfind-0.5.0-rc2-x86_64.rpm` |
-| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-25-x86_64.pkg.tar.zst` |
+| Arch Linux | [`.pkg.tar.zst`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst) | `sudo pacman -U purrfind-0.5.0rc2-26-x86_64.pkg.tar.zst` |
+| Flatpak | [`.flatpak`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-x86_64.flatpak) · [manifesto](packaging/io.github.guedessoftware.PurrFind.yml) | `flatpak install --user ./PurrFind-0.5.0-rc2-x86_64.flatpak` |
 | Source | [`tar.xz`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/PurrFind-0.5.0-rc2-source.tar.xz) | See [Build](#build-from-source) |
 
 Verify downloads with [`SHA256SUMS`](https://github.com/guedessoftware/puurfind/releases/download/v0.5.0-rc2/SHA256SUMS).
@@ -65,9 +66,10 @@ For Debian/Ubuntu, prefer `apt install ./purrfind-*.deb`: it installs the Qt,
 QML and multimedia runtime dependencies automatically. If the package was
 installed previously with `dpkg -i`, repair dependencies with `sudo apt -f install`.
 
-> Flatpak is not included in this beta. PurrFind's persistent user indexer and
-> explicit filesystem roots need a portal/sandbox design that preserves the
-> same functionality without over-broad permissions.
+The Flatpak bundles the same PDF, office, metadata and OCR components. It runs
+the indexer inside the sandbox and uses the GlobalShortcuts portal on Wayland;
+read-only access to `$HOME` is granted by default. Directories outside the home
+directory need an additional path permission in the desktop's Flatpak settings.
 
 ## Search syntax
 
@@ -111,10 +113,8 @@ systemctl --user enable --now purrfind-indexer.service
 ```
 
 The tray/shortcut listener is registered through XDG autostart and starts at
-the next graphical login. To activate it immediately after installation,
-launch it in the background from your user session:
-`nohup /usr/bin/purrfind --background >/tmp/purrfind.log 2>&1 & disown`.
-The process remains resident in the tray so the global shortcut stays active.
+the next graphical login. On Wayland it retries portal registration after
+login, so a delayed desktop portal does not permanently disable `Super+F`.
 
 ## Keyboard and tray controls
 

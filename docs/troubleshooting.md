@@ -52,9 +52,12 @@ sysctl automatically. Reduce indexed roots or have the administrator raise
 ## Global shortcut and Wayland
 
 On X11, PurrFind registers the configured shortcut directly. On Wayland it
-requests it through the Desktop Portal. KDE, GNOME, and portal versions differ
-in support and approval UI. The tray menu reports whether registration is
-active. A denial or
+requests it through the Desktop Portal; GNOME sessions additionally use the
+supported `gsettings` custom-keybinding schema (needed by Ubuntu 24.04, whose
+portal does not expose GlobalShortcuts). KDE, GNOME, and portal versions differ
+in support and approval UI. Registration is retried after login so a portal
+that starts after the autostart entry does not leave the shortcut permanently
+disabled. The tray menu reports whether registration is active. A denial or
 conflict appears in the overlay. As a portable fallback, bind `purrfind` in the
 desktop keyboard settings. If another application already owns the same X11
 combination, PurrFind reports the conflict instead of silently replacing it.
@@ -70,9 +73,11 @@ sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd tesseract-ocr
 systemctl --user restart purrfind-indexer.service
 ```
 
-The DEB package recommends the English, OSD, and Portuguese packs automatically;
-the explicit command is useful after installing with `--no-install-recommends`.
-PurrFind never downloads language data.
+The native packages include the default English, OSD and Portuguese data under
+`/usr/share/purrfind/tessdata`, so a clean install does not depend on a
+distribution-specific language-package name. Additional languages can still
+be installed from the distribution repositories. PurrFind never downloads
+language data.
 
 ## Remove local data
 

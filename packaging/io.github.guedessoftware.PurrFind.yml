@@ -1,0 +1,174 @@
+app-id: io.github.guedessoftware.PurrFind
+runtime: org.kde.Platform
+runtime-version: '6.10'
+sdk: org.kde.Sdk
+command: purrfind
+rename-icon: io.github.guedessoftware.PurrFind
+
+# The sandbox keeps the index/configuration private to the application while
+# allowing read-only access to the user's home (the default indexed root).
+# Global shortcuts are requested through the standard portal; no compositor
+# specific shortcut daemon is accessed from the sandbox.
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=session-bus
+  - --device=dri
+  - --filesystem=home:ro
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.GlobalShortcuts
+  - --own-name=org.purrfind.Application
+  - --own-name=org.purrfind.Indexer
+  - --env=TESSDATA_PREFIX=/app/share/tessdata
+
+modules:
+  # libzip, Exiv2, Poppler and Tesseract are bundled because they are not part
+  # of every KDE runtime revision.  This keeps PDF, office, metadata and OCR
+  # behavior equal to the native packages.
+  - name: inih
+    buildsystem: simple
+    build-commands:
+      - cc -fPIC -shared -Wl,-soname,libinih.so.0 -o libinih.so.0 ini.c
+      - install -Dm755 libinih.so.0 /app/lib/libinih.so.0
+      - ln -s libinih.so.0 /app/lib/libinih.so
+      - install -Dm644 ini.h /app/include/ini.h
+      - c++ -std=c++11 -fPIC -Icpp -c cpp/INIReader.cpp -o INIReader.o
+      - c++ -shared -Wl,-soname,libINIReader.so.0 -o libINIReader.so.0 INIReader.o -L/app/lib -linih
+      - install -Dm755 libINIReader.so.0 /app/lib/libINIReader.so.0
+      - ln -s libINIReader.so.0 /app/lib/libINIReader.so
+      - install -Dm644 cpp/INIReader.h /app/include/INIReader.h
+      - install -d /app/lib/pkgconfig
+      - >
+        printf '%s\n' 'prefix=/app' 'libdir=${prefix}/lib'
+        'includedir=${prefix}/include' '' 'Name: inih'
+        'Description: Simple .INI file parser' 'Version: 58'
+        'Libs: -L${libdir} -linih' 'Cflags: -I${includedir}'
+        > /app/lib/pkgconfig/inih.pc
+      - >
+        printf '%s\n' 'prefix=/app' 'libdir=${prefix}/lib'
+        'includedir=${prefix}/include' '' 'Name: INIReader'
+        'Description: C++ INI file reader' 'Version: 58'
+        'Requires: inih' 'Libs: -L${libdir} -lINIReader'
+        'Cflags: -I${includedir}'
+        > /app/lib/pkgconfig/INIReader.pc
+    sources:
+      - type: archive
+        url: https://github.com/benhoyt/inih/archive/refs/tags/r58.tar.gz
+        sha256: e79216260d5dffe809bda840be48ab0eec7737b2bb9f02d2275c1b46344ea7b7
+
+  - name: libzip
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DBUILD_TOOLS=OFF
+      - -DBUILD_REGRESS=OFF
+      - -DENABLE_BZIP2=ON
+      - -DENABLE_LZMA=ON
+      - -DENABLE_ZSTD=ON
+    sources:
+      - type: archive
+        url: https://libzip.org/download/libzip-1.11.4.tar.xz
+        sha256: 8a247f57d1e3e6f6d11413b12a6f28a9d388de110adc0ec608d893180ed7097b
+
+  - name: exiv2
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DEXIV2_BUILD_SAMPLES=OFF
+      - -DEXIV2_BUILD_EXIV2_COMMAND=OFF
+      - -DEXIV2_BUILD_UNIT_TESTS=OFF
+      - -DEXIV2_ENABLE_NLS=OFF
+    sources:
+      - type: archive
+        url: https://github.com/Exiv2/exiv2/archive/refs/tags/v0.28.6.tar.gz
+        sha256: 9d481117b97afa5324bf3ea0ad79f5c2939ae94ba0d0f5f8eb23aee16d9ec58d
+
+  - name: poppler
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DENABLE_QT5=OFF
+      - -DENABLE_QT6=ON
+      - -DENABLE_BOOST=OFF
+      - -DENABLE_UTILS=OFF
+      - -DENABLE_GLIB=OFF
+      - -DENABLE_GOBJECT_INTROSPECTION=OFF
+      - -DENABLE_LIBCURL=OFF
+      - -DENABLE_NSS3=OFF
+      - -DBUILD_TESTING=OFF
+      - -DBUILD_GTK_TESTS=OFF
+      - -DBUILD_QT5_TESTS=OFF
+      - -DBUILD_QT6_TESTS=OFF
+      - -DBUILD_CPP_TESTS=OFF
+      - -DBUILD_MANUAL_TESTS=OFF
+    sources:
+      - type: archive
+        url: https://poppler.freedesktop.org/poppler-25.07.0.tar.xz
+        sha256: c504a9066dbdfebe377ad53cec641fd971ee96c4e1e8ca74e6c9c03d46d817ae
+
+  - name: leptonica
+    buildsystem: autotools
+    config-opts:
+      - --disable-programs
+      - --disable-debug
+    sources:
+      - type: archive
+        url: https://github.com/DanBloomberg/leptonica/archive/refs/tags/1.85.0.tar.gz
+        sha256: c01376bce0379d4ea4bc2ec5d5cbddaa49e2f06f88242619ab8c059e21adf233
+
+  - name: tesseract
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DBUILD_SHARED_LIBS=ON
+      - -DBUILD_TRAINING_TOOLS=OFF
+      - -DGRAPHICS_DISABLED=ON
+      - -DOPENMP_BUILD=OFF
+      - -DBUILD_TESTS=OFF
+    sources:
+      - type: archive
+        url: https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.5.1.tar.gz
+        sha256: a7a3f2a7420cb6a6a94d80c24163e183cf1d2f1bed2df3bbc397c81808a57237
+
+  - name: tessdata-eng
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 eng.traineddata /app/share/tessdata/eng.traineddata
+    sources:
+      - type: file
+        url: https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+        dest-filename: eng.traineddata
+        sha256: 7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2
+
+  - name: tessdata-osd
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 osd.traineddata /app/share/tessdata/osd.traineddata
+    sources:
+      - type: file
+        url: https://github.com/tesseract-ocr/tessdata_fast/raw/main/osd.traineddata
+        dest-filename: osd.traineddata
+        sha256: 9cf5d576fcc47564f11265841e5ca839001e7e6f38ff7f7aacf46d15a96b00ff
+
+  - name: tessdata-por
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 por.traineddata /app/share/tessdata/por.traineddata
+    sources:
+      - type: file
+        url: https://github.com/tesseract-ocr/tessdata_fast/raw/main/por.traineddata
+        dest-filename: por.traineddata
+        sha256: c4932b937207a9514b7514d518b931a99938c02a28a5a5a553f8599ed58b7deb
+
+  - name: purrfind
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DBUILD_TESTING=OFF
+      - -DPURRFIND_FLATPAK=ON
+      - -DPURRFIND_WITH_PDF=ON
+      - -DPURRFIND_WITH_OFFICE=ON
+      - -DPURRFIND_WITH_EXIV2=ON
+      - -DPURRFIND_WITH_OCR=ON
+    sources:
+      - type: dir
+        path: ..

@@ -7,10 +7,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Ubuntu LTS, image: "ubuntu:24.04", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config dbus-daemon libqt6svg6 qml6-module-qtqml-workerscript qml6-module-qtquick-controls qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtmultimedia qt6-image-formats-plugins qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
-          - { name: Debian stable, image: "debian:12", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config dbus-daemon libqt6svg6 qml6-module-qtqml-workerscript qml6-module-qtquick-controls qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtmultimedia qt6-image-formats-plugins qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-por" }
-          - { name: Fedora current, image: "fedora:latest", tessdata: "/usr/share/tesseract/tessdata", install: "dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config dbus-daemon qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-langpack-por" }
-          - { name: Arch Linux, image: "archlinux:latest", tessdata: "/usr/share/tessdata", install: "pacman -Syu --noconfirm --needed base-devel cmake ninja dbus ttf-dejavu qt6-base qt6-declarative qt6-multimedia qt6-tools libx11 sqlite poppler-qt6 libzip libxml2 exiv2 tesseract tesseract-data-eng tesseract-data-por" }
+          - { name: Ubuntu LTS, image: "ubuntu:24.04", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config dbus-daemon libqt6svg6 qml6-module-qtqml-workerscript qml6-module-qtquick-controls qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtmultimedia qt6-image-formats-plugins qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-osd tesseract-ocr-por" }
+          - { name: Debian stable, image: "debian:12", tessdata: "/usr/share/tesseract-ocr/5/tessdata", install: "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config dbus-daemon libqt6svg6 qml6-module-qtqml-workerscript qml6-module-qtquick-controls qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtmultimedia qt6-image-formats-plugins qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-osd tesseract-ocr-por" }
+          - { name: Fedora current, image: "fedora:latest", tessdata: "/usr/share/tesseract/tessdata", install: "dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config dbus-daemon qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel qt6-qttools-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-osd tesseract-langpack-por" }
+          - { name: Arch Linux, image: "archlinux:latest", tessdata: "/usr/share/tessdata", install: "pacman -Syu --noconfirm --needed base-devel cmake ninja dbus ttf-dejavu qt6-base qt6-declarative qt6-multimedia qt6-imageformats qt6-tools libx11 sqlite poppler-qt6 libzip libxml2 exiv2 tesseract tesseract-data-eng tesseract-data-osd tesseract-data-por" }
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
@@ -66,3 +66,41 @@ jobs:
       - run: dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel libX11-devel sqlite-devel
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DPURRFIND_WITH_PDF=OFF -DPURRFIND_WITH_OFFICE=OFF -DPURRFIND_WITH_EXIV2=OFF -DPURRFIND_WITH_OCR=OFF && cmake --build build --target purrfind-benchmark --parallel 2
       - run: ./scripts/check-performance.sh ./build/purrfind-benchmark
+
+  package-matrix:
+    name: Package smoke (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 24.04 DEB
+            image: ubuntu:24.04
+            generator: DEB
+            install: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build pkg-config dpkg-dev rpm qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-svg-dev libx11-dev libsqlite3-dev libpoppler-qt6-dev libzip-dev libxml2-dev libexiv2-dev libtesseract-dev tesseract-ocr-eng tesseract-ocr-osd tesseract-ocr-por qml6-module-qtqml-workerscript qml6-module-qtquick-controls qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtmultimedia qt6-image-formats-plugins
+          - name: Fedora 44 RPM
+            image: fedora:44
+            generator: RPM
+            install: dnf install -y cmake gcc-c++ ninja-build pkgconf-pkg-config rpm-build qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel libX11-devel sqlite-devel poppler-qt6-devel libzip-devel libxml2-devel exiv2-devel tesseract-devel tesseract-langpack-eng tesseract-osd tesseract-langpack-por
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: ${{ matrix.install }}
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=OFF
+      - run: cmake --build build --parallel 2
+      - run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
+      - if: matrix.generator == 'DEB'
+        run: |
+          artifact=$(find build -maxdepth 1 -name '*.deb' -print -quit)
+          test -n "$artifact"
+          dpkg-deb --info "$artifact"
+          dpkg-deb --contents "$artifact" | grep -q 'usr/bin/purrfind'
+          dpkg-deb --contents "$artifact" | grep -q 'usr/bin/purrfind-indexer'
+      - if: matrix.generator == 'RPM'
+        run: |
+          artifact=$(find build -maxdepth 1 -name '*.rpm' -print -quit)
+          test -n "$artifact"
+          rpm -qp --info "$artifact"
+          rpm -qp --requires "$artifact" | grep -q 'tesseract'
+          rpm -qp --list "$artifact" | grep -q 'usr/share/purrfind/tessdata/eng.traineddata'
+          rpm -qp --list "$artifact" | grep -q 'usr/share/purrfind/tessdata/por.traineddata'

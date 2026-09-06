@@ -4,15 +4,20 @@ version=$(tr -d '\n' < VERSION)
 case "$version" in *[!0-9A-Za-z.-]*) echo "Invalid VERSION" >&2; exit 1;; esac
 mkdir -p dist
 archive="dist/PurrFind-${version}-source.tar.xz"
+archive_tmp="${archive}.tmp.$$"
+trap 'rm -f "$archive_tmp"' EXIT HUP INT TERM
 tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-0}" --owner=0 --group=0 --numeric-owner \
   --exclude='./build' --exclude='./build-*' --exclude='./dist' --exclude='./dist/**' \
   --exclude='./dist-*' --exclude='./dist-*/**' \
+  --exclude='./.flatpak-builder' --exclude='./.flatpak-builder/**' \
   --exclude='./CMakeFiles' --exclude='./CMakeFiles/**' --exclude='./CMakeCache.txt' \
   --exclude='./cmake_install.cmake' --exclude='./CTestTestfile.cmake' --exclude='./Makefile' \
   --exclude='./_CPack_Packages' --exclude='./_CPack_Packages/**' --exclude='./.git' \
   --exclude='./*.rpm' --exclude='./*.deb' --exclude='./*.pkg.tar.zst' \
   --exclude='./purrfind-debug*' --exclude='*.sqlite3*' \
-  --transform "s,^.,PurrFind-${version}," -cJf "$archive" .
+  --transform "s,^.,PurrFind-${version}," -cJf "$archive_tmp" .
+mv "$archive_tmp" "$archive"
+trap - EXIT HUP INT TERM
 source_hash=$(sha256sum "$archive" | awk '{print $1}')
 sed "s/@SOURCE_SHA256@/$source_hash/" packaging/arch/PKGBUILD > dist/PKGBUILD
 (cd dist && {

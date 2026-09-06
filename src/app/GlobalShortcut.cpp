@@ -77,6 +77,10 @@ GlobalShortcut::GlobalShortcut(QObject *parent) : QObject(parent)
     QDBusConnection::sessionBus().connect("org.freedesktop.portal.Desktop",
         "/org/freedesktop/portal/desktop", "org.freedesktop.portal.GlobalShortcuts",
         "Activated", this, SLOT(portalActivated(QDBusObjectPath,QString,qulonglong,QVariantMap)));
+    retryTimer_.setSingleShot(true);
+    connect(&retryTimer_, &QTimer::timeout, this, [this] {
+        if (!registered_ && !requestedShortcut_.isEmpty()) attemptRegistration();
+    });
 }
 
 GlobalShortcut::~GlobalShortcut()
@@ -153,7 +157,9 @@ bool GlobalShortcut::registerX11Shortcut(const QString &shortcut)
     xNotifier_ = new QSocketNotifier(ConnectionNumber(display), QSocketNotifier::Read, this);
     connect(xNotifier_, &QSocketNotifier::activated, this,
             [this](QSocketDescriptor, QSocketNotifier::Type) { processX11Events(); });
-    QTimer::singleShot(0, this, [this] { emit registrationChanged(true, {}); });
+    registered_ = true;
+    retryTimer_.stop();
+    emit registrationChanged(true, {});
     return true;
 #else
     Q_UNUSED(shortcut);
@@ -257,7 +263,9 @@ bool GlobalShortcut::registerGnomeShortcut(const QString &shortcut)
         || !runGsettings({"set", keySchema, "command", "'" + command + "'"})
         || !runGsettings({"set", keySchema, "binding", "'" + trigger + "'"}))
         return false;
-    QTimer::singleShot(0, this, [this] { emit registrationChanged(true, {}); });
+    registered_ = true;
+    retryTimer_.stop();
+    emit registrationChanged(true, {});
     return true;
 }
 
@@ -335,19 +343,43 @@ QDBusObjectPath GlobalShortcut::requestPath(const QString &token) const
                                .arg(sender, token));
 }
 
+void GlobalShortcut::scheduleRetry(const QString &message)
+{
+    registered_ = false;
+    error_ = message.isEmpty() ? QStringLiteral("Global shortcut is unavailable") : message;
+    emit registrationChanged(false, error_);
+    if (retryTimer_.isActive()) return;
+    retryTimer_.start(retryDelayMs_);
+    retryDelayMs_ = qMin(retryDelayMs_ * 2, 15000);
+}
+
 void GlobalShortcut::registerShortcut(const QString &shortcut)
 {
     requestedShortcut_ = shortcut;
+    error_.clear();
+    registered_ = false;
+    retryDelayMs_ = 2000;
+    retryTimer_.stop();
+    ++registrationGeneration_;
+    attemptRegistration();
+}
+
+void GlobalShortcut::attemptRegistration()
+{
+    const quint64 attempt = ++registrationGeneration_;
+    registered_ = false;
     error_.clear();
     releaseX11Shortcut();
     // GNOME's Shell owns some accelerators before they reach X11, even in an
     // Xorg session. Prefer its custom-keybindings backend whenever available
     // so Super+F cannot be reported as grabbed while another desktop action
     // still receives it.
-    if (isGnomeSession() && registerGnomeShortcut(shortcut)) return;
+#ifndef PURRFIND_FLATPAK
+    if (isGnomeSession() && registerGnomeShortcut(requestedShortcut_)) return;
+#endif
     // XWayland can report a successful X11 grab while the compositor keeps
     // Super-key events. Prefer the compositor-aware path on Wayland.
-    if (!isWaylandSession() && registerX11Shortcut(shortcut)) return;
+    if (!isWaylandSession() && registerX11Shortcut(requestedShortcut_)) return;
     // GNOME 46 (Ubuntu 24.04) does not expose the GlobalShortcuts portal.
     // Its user custom-keybindings API is also the fallback when an existing
     // GNOME/X11 action already owns the requested accelerator.
@@ -355,7 +387,9 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
     // machine sessions sometimes omit it even though the GNOME schemas are
     // available. The helper is harmless elsewhere and simply fails when the
     // schema is not installed.
-    if (registerGnomeShortcut(shortcut)) return;
+#ifndef PURRFIND_FLATPAK
+    if (registerGnomeShortcut(requestedShortcut_)) return;
+#endif
     const QString token = QString("purrfind_%1").arg(QRandomGenerator::global()->generate());
     QVariantMap options{{"handle_token", token}, {"session_handle_token", token + "_session"}};
     const QDBusObjectPath expectedRequest = requestPath(token);
@@ -367,13 +401,14 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
                           "org.freedesktop.portal.GlobalShortcuts", QDBusConnection::sessionBus());
     auto *watcher = new QDBusPendingCallWatcher(portal.asyncCall("CreateSession", options), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
-        [this, watcher, expectedRequest](QDBusPendingCallWatcher *) {
+        [this, watcher, expectedRequest, attempt](QDBusPendingCallWatcher *) {
             QDBusPendingReply<QDBusObjectPath> reply = *watcher;
             watcher->deleteLater();
+            if (attempt != registrationGeneration_) return;
             if (reply.isError()) {
-                error_ = reply.error().message().isEmpty()
+                const QString message = reply.error().message().isEmpty()
                     ? "Global shortcut portal is unavailable" : reply.error().message();
-                emit registrationChanged(false, error_);
+                scheduleRetry(message);
                 return;
             }
             const QDBusObjectPath actualRequest = reply.value();
@@ -385,8 +420,7 @@ void GlobalShortcut::registerShortcut(const QString &shortcut)
 void GlobalShortcut::sessionResponse(uint response, const QVariantMap &results)
 {
     if (response != 0) {
-        error_ = "Desktop denied global shortcut session";
-        emit registrationChanged(false, error_);
+        scheduleRetry("Desktop denied global shortcut session");
         return;
     }
     // GlobalShortcuts specifies session_handle as a string for historical
@@ -399,11 +433,11 @@ void GlobalShortcut::sessionResponse(uint response, const QVariantMap &results)
         ? sessionValue.value<QDBusObjectPath>().path()
         : sessionValue.toString();
     if (sessionPath.isEmpty() || !sessionPath.startsWith('/')) {
-        error_ = "Desktop returned an invalid global shortcut session";
-        emit registrationChanged(false, error_);
+        scheduleRetry("Desktop returned an invalid global shortcut session");
         return;
     }
     session_ = QDBusObjectPath(sessionPath);
+    const quint64 attempt = registrationGeneration_;
     PortalShortcutList shortcuts;
     shortcuts.append({"show", {{"description", "Show PurrFind"},
                                 {"preferred_trigger", portalTrigger(requestedShortcut_)}}});
@@ -417,12 +451,12 @@ void GlobalShortcut::sessionResponse(uint response, const QVariantMap &results)
         portal.asyncCall("BindShortcuts", QVariant::fromValue(session_),
                          QVariant::fromValue(shortcuts), QString(), options), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
-        [this, watcher, expectedRequest](QDBusPendingCallWatcher *) {
+        [this, watcher, expectedRequest, attempt](QDBusPendingCallWatcher *) {
             QDBusPendingReply<QDBusObjectPath> reply = *watcher;
             watcher->deleteLater();
+            if (attempt != registrationGeneration_) return;
             if (reply.isError()) {
-                error_ = reply.error().message();
-                emit registrationChanged(false, error_);
+                scheduleRetry(reply.error().message());
                 return;
             }
             const QDBusObjectPath actualRequest = reply.value();
@@ -433,10 +467,14 @@ void GlobalShortcut::sessionResponse(uint response, const QVariantMap &results)
 
 void GlobalShortcut::bindingResponse(uint response, const QVariantMap &)
 {
-    if (response == 0) emit registrationChanged(true, {});
+    if (response == 0) {
+        registered_ = true;
+        retryTimer_.stop();
+        retryDelayMs_ = 2000;
+        emit registrationChanged(true, {});
+    }
     else {
-        error_ = "Desktop denied the requested shortcut";
-        emit registrationChanged(false, error_);
+        scheduleRetry("Desktop denied the requested shortcut");
     }
 }
 

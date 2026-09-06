@@ -49,6 +49,8 @@ option(PURRFIND_WITH_PDF "Enable PDF content extraction with Poppler-Qt6" ON)
 option(PURRFIND_WITH_OFFICE "Enable OOXML/OpenDocument extraction with libzip/libxml2" ON)
 option(PURRFIND_WITH_EXIV2 "Enable advanced image metadata with Exiv2" ON)
 option(PURRFIND_WITH_OCR "Enable local OCR with Tesseract" ON)
+option(PURRFIND_FLATPAK "Build the sandboxed Flatpak integration" OFF)
+option(PURRFIND_BUNDLE_OCR_DATA "Bundle the default OCR language data" ON)
 
 if(PURRFIND_WITH_PDF)
     pkg_check_modules(POPPLER_QT6 REQUIRED IMPORTED_TARGET poppler-qt6)
@@ -188,6 +190,12 @@ target_link_libraries(purrfind PRIVATE
     purrfind-core purrfind-preview Qt6::Core Qt6::Concurrent Qt6::DBus Qt6::Gui Qt6::Qml
     Qt6::Multimedia Qt6::Quick Qt6::QuickControls2 Qt6::Widgets
 )
+if(PURRFIND_FLATPAK)
+    # Flatpak cannot install or activate a systemd --user unit.  The GUI
+    # starts the indexer as a supervised child process instead; native builds
+    # keep the existing D-Bus/systemd activation path unchanged.
+    target_compile_definitions(purrfind PRIVATE PURRFIND_FLATPAK=1)
+endif()
 if(X11_FOUND)
     target_compile_definitions(purrfind PRIVATE PURRFIND_WITH_X11_SHORTCUT=1)
     target_link_libraries(purrfind PRIVATE X11::X11)
@@ -280,24 +288,69 @@ install(TARGETS purrfind purrfind-indexer
 if(PURRFIND_WITH_OCR)
     install(TARGETS purrfind-ocr-worker RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/purrfind-indexer.service
-    DESTINATION ${PURRFIND_SYSTEMD_USER_DIR}
-)
-install(FILES packaging/io.github.guedessoftware.PurrFind.desktop
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
-)
-install(FILES packaging/io.github.guedessoftware.PurrFind-autostart.desktop
-    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart
-)
+if(PURRFIND_WITH_OCR AND PURRFIND_BUNDLE_OCR_DATA)
+    # Language data is runtime data rather than an ELF dependency. Bundle the
+    # three defaults when present so DEB/RPM/Arch packages do not depend on
+    # distribution-specific tesseract-data package names.
+    set(PURRFIND_TESSDATA_SOURCE_DIR "" CACHE PATH
+        "Directory containing eng/osd/por.traineddata for package bundling")
+    if(NOT PURRFIND_TESSDATA_SOURCE_DIR)
+        foreach(_purrfind_tessdata_dir
+            /usr/share/tessdata
+            /usr/share/tesseract/tessdata
+            /usr/share/tesseract-ocr/5/tessdata
+            /usr/share/tesseract-ocr/4.00/tessdata
+            /app/share/tessdata
+            /usr/local/share/tessdata)
+            if(IS_DIRECTORY "${_purrfind_tessdata_dir}")
+                set(PURRFIND_TESSDATA_SOURCE_DIR "${_purrfind_tessdata_dir}")
+                break()
+            endif()
+        endforeach()
+    endif()
+    if(PURRFIND_TESSDATA_SOURCE_DIR AND IS_DIRECTORY "${PURRFIND_TESSDATA_SOURCE_DIR}")
+        foreach(_purrfind_lang eng osd por)
+            if(EXISTS "${PURRFIND_TESSDATA_SOURCE_DIR}/${_purrfind_lang}.traineddata")
+                install(FILES "${PURRFIND_TESSDATA_SOURCE_DIR}/${_purrfind_lang}.traineddata"
+                    DESTINATION ${CMAKE_INSTALL_DATADIR}/purrfind/tessdata)
+            else()
+                message(WARNING "OCR data file ${_purrfind_lang}.traineddata was not found in ${PURRFIND_TESSDATA_SOURCE_DIR}")
+            endif()
+        endforeach()
+    else()
+        message(WARNING "No tessdata directory found; packages will rely on system language data")
+    endif()
+endif()
+if(NOT PURRFIND_FLATPAK)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/purrfind-indexer.service
+        DESTINATION ${PURRFIND_SYSTEMD_USER_DIR}
+    )
+    install(FILES packaging/io.github.guedessoftware.PurrFind.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    install(FILES packaging/io.github.guedessoftware.PurrFind-autostart.desktop
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart
+    )
+else()
+    install(FILES packaging/io.github.guedessoftware.PurrFind-flatpak.desktop
+        RENAME io.github.guedessoftware.PurrFind.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    install(FILES packaging/io.github.guedessoftware.PurrFind-flatpak-autostart.desktop
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart
+    )
+endif()
 install(FILES packaging/io.github.guedessoftware.PurrFind.metainfo.xml
     DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
 )
 install(FILES resources/icons/io.github.guedessoftware.PurrFind.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.purrfind.Indexer.service
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/services
-)
+if(NOT PURRFIND_FLATPAK)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.purrfind.Indexer.service
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/services
+    )
+endif()
 
 set(CPACK_PACKAGE_NAME "purrfind")
 set(CPACK_PACKAGE_VENDOR "Guedes Software")
@@ -334,18 +387,21 @@ if(NOT DPKG_SHLIBDEPS_EXECUTABLE)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS
         "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6core6 (>= 6.4), libqt6concurrent6 (>= 6.4), libqt6dbus6 (>= 6.4), libqt6gui6 (>= 6.4), libqt6network6 (>= 6.4), libqt6qml6 (>= 6.4), libqt6quick6 (>= 6.4), libqt6widgets6 (>= 6.4), libsqlite3-0, libx11-6, libglx0, libopengl0, libpoppler-qt6-3, libzip4 | libzip4t64, libxml2, libexiv2-27, libtesseract5, libarchive13 | libarchive13t64, libcurl4 | libcurl4t64")
 endif()
-# The default configuration enables OCR and selects English, orientation/script,
-# and Portuguese packs. Recommends makes those language data packages install by
-# default while still allowing minimal installations with --no-install-recommends.
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "tesseract-ocr-eng, tesseract-ocr-osd, tesseract-ocr-por")
+# When the builder has tessdata, it is installed under /usr/share/purrfind and
+# the package is self-contained for the default OCR languages. A fallback
+# recommendation remains available for intentionally minimal builds.
+if(NOT PURRFIND_BUNDLE_OCR_DATA)
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "tesseract-ocr-eng, tesseract-ocr-osd, tesseract-ocr-por")
+endif()
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
 set(CPACK_RPM_PACKAGE_VERSION "0.5.0")
 set(CPACK_RPM_PACKAGE_RELEASE "0.rc2")
-# Ship the default OCR data with Fedora/RHEL packages as well.  The shared
-# Tesseract library is discovered automatically, but language data is loaded
-# at runtime and therefore needs explicit RPM requirements.
-set(CPACK_RPM_PACKAGE_REQUIRES "tesseract-langpack-eng, tesseract-osd, tesseract-langpack-por")
+# If data bundling was disabled, keep explicit Fedora/RHEL language package
+# requirements. Otherwise only the shared Tesseract library is required.
+if(NOT PURRFIND_BUNDLE_OCR_DATA)
+    set(CPACK_RPM_PACKAGE_REQUIRES "tesseract-langpack-eng, tesseract-osd, tesseract-langpack-por")
+endif()
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 set(CPACK_SOURCE_GENERATOR "TXZ")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "PurrFind-${PURRFIND_RELEASE_VERSION}-source")
